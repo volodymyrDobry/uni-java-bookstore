@@ -1,13 +1,16 @@
 package com.cengage.contenttaggingservice.unibookstore.service;
 
 import com.cengage.contenttaggingservice.unibookstore.dto.BasketResponse;
+import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBasketItemRequest;
+
+import java.util.List;
 
 public interface BasketService {
-    BasketResponse add(String userId, Long bookId, int quantity);
+    BasketResponse getUsersBasket();
 
-    BasketResponse get(String userId);
+    BasketResponse addBookToTheBasket(UpdateBasketItemRequest request);
 
-    void remove(String userId, Long bookId);
+    BasketResponse updateBasketItems(List<UpdateBasketItemRequest> request);
 
-    BasketResponse changeQuantity(String userId, Long bookId, int quantity);
+    void removeBookFromBasket(Long bookId);
 }

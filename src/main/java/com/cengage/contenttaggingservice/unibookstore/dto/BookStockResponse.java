@@ -1,8 +1,10 @@
 package com.cengage.contenttaggingservice.unibookstore.dto;
 
-public record BasketItemResponse(
+import java.math.BigDecimal;
+
+public record BookStockResponse(
         Long bookId,
-        String title,
+        BigDecimal price,
         Integer quantity
 ) {
 }

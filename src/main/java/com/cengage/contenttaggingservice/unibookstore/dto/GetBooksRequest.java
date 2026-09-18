@@ -4,15 +4,12 @@ import com.cengage.contenttaggingservice.unibookstore.domain.enums.Genre;
 
 import java.math.BigDecimal;
 
-public record BookResponse(
-        Long id,
+public record GetBooksRequest(
         String title,
-        String description,
         String author,
         Genre genre,
-        String imageUrl,
         boolean enabled,
-        Integer quantity,
-        BigDecimal price
+        BigDecimal minPrice,
+        BigDecimal maxPrice
 ) {
 }
