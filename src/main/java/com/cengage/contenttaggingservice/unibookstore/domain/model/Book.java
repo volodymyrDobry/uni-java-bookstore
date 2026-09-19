@@ -48,6 +48,6 @@ public class Book {
     @Column(nullable = false)
     private boolean enabled;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private BookStock stock;
 }

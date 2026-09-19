@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SecurityUtils {
 
-    private static final String ADMIN_ROLE = "ROLE_ADMIN";
+    private static final String ADMIN_ROLE = "ADMIN";
 
     public boolean isCurrentUserAdmin() {
         CurrentUser user = this.getCurrentUser();

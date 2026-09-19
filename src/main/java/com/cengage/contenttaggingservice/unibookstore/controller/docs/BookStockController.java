@@ -20,6 +20,6 @@ public interface BookStockController {
 
     @PutMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create or replace stock")
+    @Operation(summary = "Replace stock quantity and price")
     BookStockResponse updateBookStock(@BookExists @PathVariable Long bookId, @Valid @RequestBody StockRequest request);
 }

@@ -8,6 +8,6 @@ public record UpdateBookDetailsRequest(
         String author,
         Genre genre,
         String imageUrl,
-        boolean enabled
+        Boolean enabled
 ) {
 }

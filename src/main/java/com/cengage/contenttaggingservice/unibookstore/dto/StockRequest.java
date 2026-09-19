@@ -7,7 +7,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 
 public record StockRequest(
-        @PositiveOrZero int quantity,
+        @PositiveOrZero Integer quantity,
         @DecimalMin(value = "0.0", inclusive = false) BigDecimal price
 ) {
 }

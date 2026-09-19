@@ -29,10 +29,11 @@ public interface BookManagementController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update book details")
-    BookResponse updateBookDetails(@BookExists @PathVariable Long id, @RequestBody UpdateBookDetailsRequest request);
+    @Operation(summary = "Partially update book details")
+    BookResponse updateBookDetails(@BookExists @PathVariable Long id,
+                                   @Valid @RequestBody UpdateBookDetailsRequest request);
 
     @GetMapping
-    @Operation(summary = "Find all books", description = "Searches title/description and filters in-stock enabled books")
+    @Operation(summary = "Find books", description = "Searches title and description. Regular users see only enabled in-stock books; administrators may filter visibility and see all stock levels.")
     Page<BookResponse> findAllBooks(@ModelAttribute GetBooksRequest getBooksRequest, Pageable pageable);
 }

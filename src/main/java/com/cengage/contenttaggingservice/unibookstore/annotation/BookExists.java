@@ -2,6 +2,7 @@ package com.cengage.contenttaggingservice.unibookstore.annotation;
 
 import com.cengage.contenttaggingservice.unibookstore.validator.BookExistsValidator;
 import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -18,5 +19,5 @@ public @interface BookExists {
 
     Class<?>[] groups() default {};
 
-    Class<? extends Long>[] payload() default {};
+    Class<? extends Payload>[] payload() default {};
 }

@@ -22,6 +22,7 @@ public class BookStockServiceImpl implements BookStockService {
         BookStock stock = repository.findByBookId(bookId);
         stock.setPrice(request.price());
         stock.setQuantity(request.quantity());
+        repository.save(stock);
         return new BookStockResponse(bookId, request.price(), request.quantity());
     }
 }

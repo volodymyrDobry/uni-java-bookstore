@@ -8,7 +8,7 @@ public record GetBooksRequest(
         String title,
         String author,
         Genre genre,
-        boolean enabled,
+        Boolean enabled,
         BigDecimal minPrice,
         BigDecimal maxPrice
 ) {

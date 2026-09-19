@@ -1,5 +1,7 @@
-package com.cengage.contenttaggingservice.unibookstore.exception;
+package com.cengage.contenttaggingservice.unibookstore.config;
 
+import com.cengage.contenttaggingservice.unibookstore.exception.NotFoundException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +12,11 @@ class ApiExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail notFound(NotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ProblemDetail badRequest(ConstraintViolationException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getConstraintViolations().iterator().next().getMessage());
     }
 
 }

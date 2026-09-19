@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 001-initial-schema
+      id: 001-create-book-store-schema
       author: volodymyr.dobrianskyi
       changes:
         - createTable:
@@ -35,7 +35,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: image_url
-                  type: VARCHAR(2048)
+                  type: TEXT
                   constraints:
                     nullable: false
               - column:
@@ -58,7 +58,10 @@ databaseChangeLog:
                   type: VARCHAR(255)
                   constraints:
                     nullable: false
-                    unique: true
+        - addUniqueConstraint:
+            tableName: basket
+            columnNames: user_id
+            constraintName: uk_basket_user
         - createTable:
             tableName: book_stock
             columns:
@@ -74,8 +77,7 @@ databaseChangeLog:
                   type: BIGINT
                   constraints:
                     nullable: false
-                    unique: true
-                    foreignKeyName: fk_stock_book
+                    foreignKeyName: fk_book_stock_book
                     references: books(id)
               - column:
                   name: quantity
@@ -87,6 +89,14 @@ databaseChangeLog:
                   type: DECIMAL(19,2)
                   constraints:
                     nullable: false
+        - addUniqueConstraint:
+            tableName: book_stock
+            columnNames: book_id
+            constraintName: uk_book_stock_book
+        - sql:
+            sql: ALTER TABLE book_stock ADD CONSTRAINT ck_book_stock_quantity_non_negative CHECK (quantity >= 0)
+        - sql:
+            sql: ALTER TABLE book_stock ADD CONSTRAINT ck_book_stock_price_non_negative CHECK (price >= 0)
         - createTable:
             tableName: book_items
             columns:
@@ -102,14 +112,14 @@ databaseChangeLog:
                   type: BIGINT
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_item_basket
+                    foreignKeyName: fk_book_item_basket
                     references: basket(id)
               - column:
                   name: book_id
                   type: BIGINT
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_item_book
+                    foreignKeyName: fk_book_item_book
                     references: books(id)
               - column:
                   name: quantity
@@ -120,3 +130,34 @@ databaseChangeLog:
             tableName: book_items
             columnNames: basket_id, book_id
             constraintName: uk_basket_book
+        - sql:
+            sql: ALTER TABLE book_items ADD CONSTRAINT ck_book_item_quantity_positive CHECK (quantity > 0)
+  - changeSet:
+      id: 002-seed-books-and-stock
+      author: volodymyr.dobrianskyi
+      changes:
+        - loadData:
+            file: db/changelog/data/books.csv
+            relativeToChangelogFile: false
+            tableName: books
+            usePreparedStatements: true
+        - sql:
+            sql: |
+              INSERT INTO book_stock (book_id, quantity, price)
+              SELECT
+                id,
+                CASE genre
+                  WHEN 'SCIENCE_FICTION' THEN 12
+                  WHEN 'ADVENTURE' THEN 18
+                  WHEN 'FANTASY' THEN 15
+                  WHEN 'HISTORICAL' THEN 10
+                  ELSE 0
+                END,
+                CASE genre
+                  WHEN 'SCIENCE_FICTION' THEN 17.99
+                  WHEN 'ADVENTURE' THEN 14.99
+                  WHEN 'FANTASY' THEN 19.99
+                  WHEN 'HISTORICAL' THEN 12.99
+                  ELSE 0.00
+                END
+              FROM books;

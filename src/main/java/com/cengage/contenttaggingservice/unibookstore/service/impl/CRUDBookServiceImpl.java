@@ -11,14 +11,13 @@ import com.cengage.contenttaggingservice.unibookstore.repository.BookRepository;
 import com.cengage.contenttaggingservice.unibookstore.service.CRUDBookService;
 import com.cengage.contenttaggingservice.unibookstore.specification.BookSpecification;
 import com.cengage.contenttaggingservice.unibookstore.utils.SecurityUtils;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -33,7 +32,7 @@ public class CRUDBookServiceImpl implements CRUDBookService {
     @Transactional
     public BookResponse createBook(CreateBookRequest request) {
         BookStock stock = BookStock.builder()
-                .price(Optional.ofNullable(request.price()).orElse(BigDecimal.ZERO))
+                .price(request.price())
                 .quantity(request.quantity())
                 .build();
 
@@ -44,9 +43,8 @@ public class CRUDBookServiceImpl implements CRUDBookService {
                 .genre(request.genre())
                 .imageUrl(request.imageUrl())
                 .enabled(request.enabled())
-                .stock(stock)
                 .build();
-
+        createdBook.setStock(stock);
 
         return mapper.toResponse(repository.save(createdBook));
     }
@@ -61,7 +59,7 @@ public class CRUDBookServiceImpl implements CRUDBookService {
 
     @Override
     public Page<BookResponse> findAll(GetBooksRequest getBooksRequest, Pageable pageable) {
-        boolean isEnabled = securityUtils.isCurrentUserAdmin() && getBooksRequest.enabled();
+        boolean isEnabled = !securityUtils.isCurrentUserAdmin() || getBooksRequest.enabled();
         Specification<Book> specification = BookSpecification.from(getBooksRequest, isEnabled);
         return repository.findAll(specification, pageable)
                 .map(mapper::toResponse);

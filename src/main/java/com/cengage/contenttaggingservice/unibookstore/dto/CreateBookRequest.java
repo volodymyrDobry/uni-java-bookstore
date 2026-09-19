@@ -14,7 +14,7 @@ public record CreateBookRequest(
         @NotBlank String author,
         @NotNull Genre genre,
         @NotBlank String imageUrl,
-        boolean enabled,
+        Boolean enabled,
         @DecimalMin("0.0") BigDecimal price,
         @PositiveOrZero int quantity
 ) {

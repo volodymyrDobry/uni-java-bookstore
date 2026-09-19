@@ -41,7 +41,7 @@ public class BasketServiceImpl implements BasketService {
         Basket userBasket = this.getOrCreateNewBasket();
         Book book = bookRepository.getReferenceById(request.bookId());
         BookItem updatedBookItem = userBasket.getBooks().stream()
-                .filter(b -> Objects.equals(b.getId(), request.bookId()))
+                .filter(b -> Objects.equals(b.getBook().getId(), request.bookId()))
                 .findFirst()
                 .map(b -> b.addQuantity(request.quantity()))
                 .orElse(new BookItem(null, request.quantity(), book, userBasket));
@@ -58,7 +58,7 @@ public class BasketServiceImpl implements BasketService {
                 .collect(Collectors.toMap(UpdateBasketItemRequest::bookId, UpdateBasketItemRequest::quantity));
 
         userBasket.getBooks().forEach(book -> {
-            Integer quantity = bookQuantityMap.get(book.getId());
+            Integer quantity = bookQuantityMap.get(book.getBook().getId());
             if (quantity != null) {
                 book.setQuantity(quantity);
             }
@@ -71,13 +71,13 @@ public class BasketServiceImpl implements BasketService {
     @Transactional
     public void removeBookFromBasket(Long bookId) {
         Basket userBasket = this.getOrCreateNewBasket();
-        userBasket.getBooks().removeIf(b -> Objects.equals(b.getId(), bookId));
+        userBasket.getBooks().removeIf(b -> Objects.equals(b.getBook().getId(), bookId));
         basketRepository.save(userBasket);
     }
 
     private Basket getOrCreateNewBasket() {
         CurrentUser currentUser = securityUtils.getCurrentUser();
         return basketRepository.findByUserId(currentUser.username())
-                .orElse(basketRepository.save(new Basket(null, currentUser.username(), Set.of())));
+                .orElseGet(() -> basketRepository.save(new Basket(null, currentUser.username(), Set.of())));
     }
 }
