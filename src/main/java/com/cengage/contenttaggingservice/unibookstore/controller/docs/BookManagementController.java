@@ -1,5 +1,6 @@
 package com.cengage.contenttaggingservice.unibookstore.controller.docs;
 
+import com.cengage.contenttaggingservice.unibookstore.annotation.BookExists;
 import com.cengage.contenttaggingservice.unibookstore.dto.CreateBookRequest;
 import com.cengage.contenttaggingservice.unibookstore.dto.BookResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.GetBooksRequest;
@@ -12,9 +13,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/v1/books")
+@Validated
 @Tag(name = "Books", description = "Book catalogue management and available-book search")
 public interface BookManagementController {
 
@@ -27,7 +30,7 @@ public interface BookManagementController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update book details")
-    BookResponse updateBookDetails(@PathVariable Long id, @Valid @RequestBody UpdateBookDetailsRequest request);
+    BookResponse updateBookDetails(@BookExists @PathVariable Long id, @RequestBody UpdateBookDetailsRequest request);
 
     @GetMapping
     @Operation(summary = "Find all books", description = "Searches title/description and filters in-stock enabled books")

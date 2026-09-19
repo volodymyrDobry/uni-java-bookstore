@@ -1,5 +1,6 @@
 package com.cengage.contenttaggingservice.unibookstore.controller.docs;
 
+import com.cengage.contenttaggingservice.unibookstore.annotation.BookExists;
 import com.cengage.contenttaggingservice.unibookstore.dto.BasketResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBasketItemRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,5 +40,5 @@ public interface BasketController {
     @DeleteMapping("/items/{bookId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Remove book from basket")
-    void remove(@PathVariable Long bookId);
+    void remove(@BookExists @PathVariable Long bookId);
 }
