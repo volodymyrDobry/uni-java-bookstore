@@ -118,7 +118,7 @@ jobs:
 
       # Recommended: blocking vulnerability scan before any publish.
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: uni-book-store-backend:${{ github.sha }}
           format: table
