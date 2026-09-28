@@ -28,9 +28,10 @@ class BasketControllerImplTest {
     @Test
     void getUsersBasketDelegatesToService() {
         BasketResponse expected = new BasketResponse(1L, List.of());
-        when(basketService.getUsersBasket()).thenReturn(expected);
+        when(basketService.getUsersBasket("vovko")).thenReturn(expected);
 
-        assertThat(controller.getUsersBasket()).isSameAs(expected);
+        assertThat(controller.getUsersBasket("vovko")).isSameAs(expected);
+        verify(basketService).getUsersBasket("vovko");
     }
 
     @Test

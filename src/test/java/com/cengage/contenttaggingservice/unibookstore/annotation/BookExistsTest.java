@@ -1,6 +1,7 @@
 package com.cengage.contenttaggingservice.unibookstore.annotation;
 
 import com.cengage.contenttaggingservice.unibookstore.validator.BookExistsValidator;
+import com.cengage.contenttaggingservice.unibookstore.validator.UpdateBasketItemBookExistsValidator;
 import jakarta.validation.Constraint;
 import org.junit.jupiter.api.Test;
 
@@ -20,16 +21,18 @@ class BookExistsTest {
     }
 
     @Test
-    void isWiredToTheValidator() {
+    void isWiredToValidatorsForBookIdAndBasketItemRequest() {
         Constraint constraint = BookExists.class.getAnnotation(Constraint.class);
-        assertThat(constraint.validatedBy()).containsExactly(BookExistsValidator.class);
+        assertThat(constraint.validatedBy()).containsExactlyInAnyOrder(
+                BookExistsValidator.class,
+                UpdateBasketItemBookExistsValidator.class);
     }
 
     @Test
-    void targetsFieldsAndParameters() {
+    void targetsDtosFieldsAndParameters() {
         Target target = BookExists.class.getAnnotation(Target.class);
         assertThat(target.value())
-                .containsExactlyInAnyOrder(ElementType.FIELD, ElementType.PARAMETER);
+                .containsExactlyInAnyOrder(ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER);
     }
 
     @Test

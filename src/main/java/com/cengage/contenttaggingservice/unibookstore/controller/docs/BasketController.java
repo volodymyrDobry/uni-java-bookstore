@@ -1,6 +1,7 @@
 package com.cengage.contenttaggingservice.unibookstore.controller.docs;
 
 import com.cengage.contenttaggingservice.unibookstore.annotation.BookExists;
+import com.cengage.contenttaggingservice.unibookstore.annotation.CurrentUsername;
 import com.cengage.contenttaggingservice.unibookstore.dto.BasketResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBasketItemRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,7 +29,7 @@ public interface BasketController {
 
     @GetMapping
     @Operation(summary = "Get currently authenticated user basket")
-    BasketResponse getUsersBasket();
+    BasketResponse getUsersBasket(@CurrentUsername String username);
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
