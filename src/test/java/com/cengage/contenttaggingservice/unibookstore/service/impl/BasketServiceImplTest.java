@@ -64,7 +64,6 @@ class BasketServiceImplTest {
     @Test
     void whenGetUserBasketThenReturnNewBasketCreatedForCurrentUser() {
         // Given
-        givenCurrentUser();
         when(basketRepository.findByUserId(USERNAME))
                 .thenReturn(Optional.empty());
         when(basketRepository.save(any(Basket.class)))
@@ -73,7 +72,7 @@ class BasketServiceImplTest {
                 .thenReturn(new BasketResponse(BASKET_ID, List.of()));
 
         // When
-        BasketResponse actualResponse = basketService.getUsersBasket();
+        BasketResponse actualResponse = basketService.getUsersBasket(USERNAME);
 
         // Then
         BasketResponse expectedResponse = new BasketResponse(BASKET_ID, List.of());
@@ -89,14 +88,13 @@ class BasketServiceImplTest {
     @Test
     void whenGetUserBasketThenReturnExistingBasketForCurrentUser() {
         // Given
-        givenCurrentUser();
         when(basketRepository.findByUserId(USERNAME))
                 .thenReturn(Optional.of(Basket.builder().id(BASKET_ID).build()));
         when(basketMapper.toBasketResponse(any(Basket.class)))
                 .thenReturn(new BasketResponse(BASKET_ID, List.of()));
 
         // When
-        BasketResponse actualResponse = basketService.getUsersBasket();
+        BasketResponse actualResponse = basketService.getUsersBasket(USERNAME);
 
         // Then
         BasketResponse expectedResponse = new BasketResponse(BASKET_ID, List.of());

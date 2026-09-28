@@ -16,8 +16,8 @@ public class BasketControllerImpl implements BasketController {
     private final BasketService basketService;
 
     @Override
-    public BasketResponse getUsersBasket() {
-        return basketService.getUsersBasket();
+    public BasketResponse getUsersBasket(String username) {
+        return basketService.getUsersBasket(username);
     }
 
     @Override

@@ -31,8 +31,8 @@ public class BasketServiceImpl implements BasketService {
     private final BookRepository bookRepository;
 
     @Override
-    public BasketResponse getUsersBasket() {
-        return basketMapper.toBasketResponse(this.getOrCreateNewBasket());
+    public BasketResponse getUsersBasket(String username) {
+        return basketMapper.toBasketResponse(this.getOrCreateNewBasket(username));
     }
 
     @Override
@@ -77,7 +77,11 @@ public class BasketServiceImpl implements BasketService {
 
     private Basket getOrCreateNewBasket() {
         CurrentUser currentUser = securityUtils.getCurrentUser();
-        return basketRepository.findByUserId(currentUser.username())
-                .orElseGet(() -> basketRepository.save(new Basket(null, currentUser.username(), Set.of())));
+        return getOrCreateNewBasket(currentUser.username());
+    }
+
+    private Basket getOrCreateNewBasket(String username) {
+        return basketRepository.findByUserId(username)
+                .orElseGet(() -> basketRepository.save(new Basket(null, username, Set.of())));
     }
 }

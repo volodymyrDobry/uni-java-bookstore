@@ -6,7 +6,7 @@ import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBasketItemReques
 import java.util.List;
 
 public interface BasketService {
-    BasketResponse getUsersBasket();
+    BasketResponse getUsersBasket(String username);
 
     BasketResponse addBookToTheBasket(UpdateBasketItemRequest request);
 
