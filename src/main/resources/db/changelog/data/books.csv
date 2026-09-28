@@ -1,0 +1,51 @@
+title,description,author,genre,image_url,enabled
+Pride and Prejudice,A witty novel about love and class in Regency England.,Jane Austen,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780141439518-L.jpg,true
+Jane Eyre,A governess finds independence and love.,Charlotte Bronte,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780141441146-L.jpg,true
+Wuthering Heights,A turbulent tale of passion on the moors.,Emily Bronte,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780141439556-L.jpg,true
+Great Expectations,An orphan pursues a new life in Victorian England.,Charles Dickens,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780141439563-L.jpg,true
+Oliver Twist,A young orphan struggles in nineteenth century London.,Charles Dickens,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780141439747-L.jpg,true
+The Great Gatsby,A portrait of ambition and illusion in the Jazz Age.,F. Scott Fitzgerald,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780743273565-L.jpg,true
+To Kill a Mockingbird,A child observes justice and prejudice in her town.,Harper Lee,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780061120084-L.jpg,true
+1984,A citizen resists a totalitarian surveillance state.,George Orwell,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780451524935-L.jpg,true
+Animal Farm,A fable about power and revolution.,George Orwell,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780451526342-L.jpg,true
+Brave New World,A future society trades freedom for comfort.,Aldous Huxley,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780060850524-L.jpg,true
+Fahrenheit 451,A fireman questions a world that burns books.,Ray Bradbury,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9781451673319-L.jpg,true
+Dune,An heir confronts politics and prophecy on Arrakis.,Frank Herbert,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780441172719-L.jpg,true
+Foundation,A mathematician protects civilization after an empire falls.,Isaac Asimov,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780553293357-L.jpg,true
+Neuromancer,A hacker enters a dangerous virtual underworld.,William Gibson,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780441569595-L.jpg,true
+The Left Hand of Darkness,An envoy visits a planet with an unfamiliar society.,Ursula K. Le Guin,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780441478125-L.jpg,true
+The Hobbit,A reluctant hero joins a quest for treasure.,J. R. R. Tolkien,FANTASY,https://covers.openlibrary.org/b/isbn/9780547928227-L.jpg,true
+The Fellowship of the Ring,Friends begin a perilous journey to destroy a ring.,J. R. R. Tolkien,FANTASY,https://covers.openlibrary.org/b/isbn/9780547928210-L.jpg,true
+The Two Towers,The fellowship faces war and divided paths.,J. R. R. Tolkien,FANTASY,https://covers.openlibrary.org/b/isbn/9780547928203-L.jpg,true
+The Return of the King,The final battle for Middle earth begins.,J. R. R. Tolkien,FANTASY,https://covers.openlibrary.org/b/isbn/9780547928197-L.jpg,true
+A Game of Thrones,Noble families compete for a powerful throne.,George R. R. Martin,FANTASY,https://covers.openlibrary.org/b/isbn/9780553593716-L.jpg,true
+The Name of the Wind,A gifted musician tells his remarkable story.,Patrick Rothfuss,FANTASY,https://covers.openlibrary.org/b/isbn/9780756404741-L.jpg,true
+The Way of Kings,Strangers seek honor in a storm swept world.,Brandon Sanderson,FANTASY,https://covers.openlibrary.org/b/isbn/9780765365279-L.jpg,true
+Mistborn,A crew plans to overthrow an immortal ruler.,Brandon Sanderson,FANTASY,https://covers.openlibrary.org/b/isbn/9780765311788-L.jpg,true
+The Lion the Witch and the Wardrobe,Children enter a magical world through a wardrobe.,C. S. Lewis,FANTASY,https://covers.openlibrary.org/b/isbn/9780064404990-L.jpg,true
+The Colour of Magic,A hapless wizard travels through a flat world.,Terry Pratchett,FANTASY,https://covers.openlibrary.org/b/isbn/9780062225672-L.jpg,true
+The Adventures of Sherlock Holmes,Classic mysteries solved by a brilliant detective.,Arthur Conan Doyle,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780140439074-L.jpg,true
+The Count of Monte Cristo,A betrayed sailor pursues justice and revenge.,Alexandre Dumas,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780140449266-L.jpg,true
+Treasure Island,A boy searches for pirate treasure.,Robert Louis Stevenson,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780141321004-L.jpg,true
+The Three Musketeers,Friends defend honor in seventeenth century France.,Alexandre Dumas,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780140449266-L.jpg,true
+Around the World in Eighty Days,A gentleman races around the globe.,Jules Verne,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780141325507-L.jpg,true
+The Call of the Wild,A dog survives in the Yukon wilderness.,Jack London,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780141321059-L.jpg,true
+The Old Man and the Sea,An aging fisherman battles a giant marlin.,Ernest Hemingway,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780684801223-L.jpg,true
+Life of Pi,A boy survives a shipwreck with a tiger.,Yann Martel,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780156027328-L.jpg,true
+The Martian,An astronaut fights to survive alone on Mars.,Andy Weir,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780804139021-L.jpg,true
+Project Hail Mary,An astronaut wakes alone on a desperate mission.,Andy Weir,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780593135204-L.jpg,true
+The Hunger Games,A teenager enters a televised fight for survival.,Suzanne Collins,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780439023528-L.jpg,true
+The Handmaids Tale,A woman survives oppression in a theocratic state.,Margaret Atwood,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780385490818-L.jpg,true
+The Road,A father and son cross a devastated America.,Cormac McCarthy,SCIENCE_FICTION,https://covers.openlibrary.org/b/isbn/9780307387899-L.jpg,true
+The Book Thief,A girl finds courage in wartime Germany.,Markus Zusak,HISTORICAL,https://covers.openlibrary.org/b/isbn/9780375842207-L.jpg,true
+All the Light We Cannot See,A blind girl and a radio expert meet during war.,Anthony Doerr,HISTORICAL,https://covers.openlibrary.org/b/isbn/9781501173219-L.jpg,true
+The Nightingale,Two sisters resist occupation in France.,Kristin Hannah,HISTORICAL,https://covers.openlibrary.org/b/isbn/9781250080400-L.jpg,true
+The Kite Runner,A man returns to confront his childhood past.,Khaled Hosseini,HISTORICAL,https://covers.openlibrary.org/b/isbn/9781594631931-L.jpg,true
+The Alchemist,A shepherd follows a dream across the desert.,Paulo Coelho,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780062315007-L.jpg,true
+The Da Vinci Code,A symbologist unravels a dangerous secret.,Dan Brown,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780307474278-L.jpg,true
+The Girl with the Dragon Tattoo,A journalist investigates a wealthy family.,Stieg Larsson,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780307949486-L.jpg,true
+The Shining,A family confronts terror in an isolated hotel.,Stephen King,FANTASY,https://covers.openlibrary.org/b/isbn/9780307743657-L.jpg,true
+The Ocean at the End of the Lane,A man remembers a strange childhood mystery.,Neil Gaiman,FANTASY,https://covers.openlibrary.org/b/isbn/9780062255655-L.jpg,true
+American Gods,An ex convict meets old gods in America.,Neil Gaiman,FANTASY,https://covers.openlibrary.org/b/isbn/9780062572233-L.jpg,true
+Good Omens,An angel and demon try to stop the apocalypse.,Terry Pratchett,FANTASY,https://covers.openlibrary.org/b/isbn/9780060853983-L.jpg,true
+The Princess Bride,A classic adventure of love and revenge.,William Goldman,ADVENTURE,https://covers.openlibrary.org/b/isbn/9780156035428-L.jpg,true
