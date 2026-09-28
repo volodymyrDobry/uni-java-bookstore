@@ -117,15 +117,19 @@ jobs:
           cache-to: type=gha,mode=max
 
       # Recommended: blocking vulnerability scan before any publish.
+      # Run Trivy from its official image against the image already loaded
+      # into the runner's Docker daemon (avoids the flaky setup-trivy step).
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@v0.33.1
-        with:
-          image-ref: uni-book-store-backend:${{ github.sha }}
-          format: table
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: os,library
-          severity: CRITICAL
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${HOME}/.cache/trivy:/root/.cache/trivy" \
+            aquasec/trivy:0.65.0 image \
+              --exit-code 1 \
+              --ignore-unfixed \
+              --pkg-types os,library \
+              --severity CRITICAL \
+              uni-book-store-backend:${{ github.sha }}
 
   # ---------------------------------------------------------------------------
   # 4. Publish image to GitHub Container Registry (ghcr.io).
