@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+    id 'checkstyle'
 }
 
 group = 'com.cengage.contenttaggingservice'
@@ -18,6 +19,10 @@ java {
 repositories {
     mavenCentral()
 }
+
+// Override the embedded Tomcat version managed by Spring Boot to a patched
+// release (fixes CVE-2026-65182 / -65905 / -68525 flagged by the Trivy scan).
+ext['tomcat.version'] = '11.0.26'
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -53,6 +58,15 @@ tasks.named('test') {
 
 jacoco {
     toolVersion = '0.8.14'
+}
+
+checkstyle {
+    toolVersion = '10.21.4'
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+    // Static analysis is a BLOCKING step: any violation fails the build.
+    maxWarnings = 0
+    maxErrors = 0
+    ignoreFailures = false
 }
 
 tasks.named('jacocoTestReport') {
