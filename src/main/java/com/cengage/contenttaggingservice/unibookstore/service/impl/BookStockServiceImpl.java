@@ -1,7 +1,6 @@
 package com.cengage.contenttaggingservice.unibookstore.service.impl;
 
 import com.cengage.contenttaggingservice.unibookstore.domain.model.BookStock;
-import com.cengage.contenttaggingservice.unibookstore.dto.BookResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.BookStockResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.StockRequest;
 import com.cengage.contenttaggingservice.unibookstore.repository.BookStockRepository;
@@ -9,7 +8,6 @@ import com.cengage.contenttaggingservice.unibookstore.service.BookStockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

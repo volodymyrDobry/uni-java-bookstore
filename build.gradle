@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+    id 'checkstyle'
 }
 
 group = 'com.cengage.contenttaggingservice'
@@ -53,6 +54,15 @@ tasks.named('test') {
 
 jacoco {
     toolVersion = '0.8.14'
+}
+
+checkstyle {
+    toolVersion = '10.21.4'
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+    // Static analysis is a BLOCKING step: any violation fails the build.
+    maxWarnings = 0
+    maxErrors = 0
+    ignoreFailures = false
 }
 
 tasks.named('jacocoTestReport') {
