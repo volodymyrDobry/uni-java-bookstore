@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend
+  namespace: uni-book-store
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: uni-book-store
+spec:
+  ingressClassName: nginx
+  rules:
+    # Add to /etc/hosts:  <minikube ip>  uni-book-store.local
+    - host: uni-book-store.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 80

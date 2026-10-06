@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: uni-book-store
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: uni-book-store
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0        # keep the app available during updates
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: backend
+        app.kubernetes.io/part-of: uni-book-store
+    spec:
+      # Wait for PostgreSQL to accept connections before starting the app
+      # (Liquibase + JPA validate run at boot and require the DB).
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until nc -z postgres 5432; do echo waiting for postgres; sleep 2; done"
+      containers:
+        - name: backend
+          image: uni-book-store-backend:1.0.0
+          imagePullPolicy: IfNotPresent      # use the image loaded into minikube
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          # Startup probe gives the JVM/Spring Boot time to come up before
+          # liveness/readiness start enforcing.
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 40      # up to ~200s to start
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3

@@ -25,6 +25,12 @@ FROM eclipse-temurin:25-jre-alpine AS runtime
 
 WORKDIR /app
 
+# Build-time application version (passed via --build-arg APP_VERSION=...).
+# Surfaced at runtime through /actuator/info so different image tags
+# (1.0.0 vs 1.1.0) are visibly distinguishable for the rolling-update demo.
+ARG APP_VERSION=dev
+ENV INFO_APP_VERSION=${APP_VERSION}
+
 # --- Environment variables (override at runtime via -e or docker-compose) ---
 ENV SERVER_PORT=8080 \
     SPRING_PROFILES_ACTIVE=prod \
