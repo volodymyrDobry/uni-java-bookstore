@@ -5,7 +5,8 @@ nameOverride: ""
 fullnameOverride: ""
 
 backend:
-  replicaCount: 2
+  # dev default: a single replica. values-prod.yaml raises this.
+  replicaCount: 1
   image:
     repository: uni-book-store-backend
     # Defaults to .Chart.AppVersion when empty.

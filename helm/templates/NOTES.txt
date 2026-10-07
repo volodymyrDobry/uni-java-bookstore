@@ -1,0 +1,41 @@
+✅  {{ .Chart.Name }} installed — chart {{ .Chart.Name }}-{{ .Chart.Version }}, app version {{ .Chart.AppVersion }}.
+
+   Release:   {{ .Release.Name }}
+   Namespace: {{ .Release.Namespace }}
+
+1. Wait until the backend is ready:
+
+   kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "uni-book-store.backend.fullname" . }}
+
+2. Open the application in a browser:
+{{- if .Values.ingress.enabled }}
+
+   Ingress is enabled on host "{{ .Values.ingress.host }}".
+   With the docker driver on macOS, run `minikube tunnel` and add to /etc/hosts:
+
+     127.0.0.1 {{ .Values.ingress.host }}
+
+   Then open:  http://{{ .Values.ingress.host }}/swagger-ui/index.html
+{{- else if eq .Values.backend.service.type "NodePort" }}
+
+   Service type is NodePort. Open it with:
+
+     minikube service {{ include "uni-book-store.backend.fullname" . }} -n {{ .Release.Namespace }}
+{{- else }}
+
+   Service type is {{ .Values.backend.service.type }}. Forward a local port:
+
+     kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "uni-book-store.backend.fullname" . }} 8088:{{ .Values.backend.service.port }}
+
+   Then open:  http://localhost:8088/swagger-ui/index.html
+{{- end }}
+
+   Public endpoints (no auth needed):
+     /actuator/health          -> {"status":"UP"}
+     /actuator/info            -> application version
+     /swagger-ui/index.html    -> API docs
+
+3. Inspect the release:
+
+   helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+   helm get values {{ .Release.Name }} -n {{ .Release.Namespace }}
