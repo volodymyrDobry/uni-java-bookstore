@@ -1,0 +1,63 @@
+# Default values — target the DEVELOPMENT environment.
+# Overridden per environment via values-dev.yaml / values-prod.yaml and --set.
+
+nameOverride: ""
+fullnameOverride: ""
+
+backend:
+  replicaCount: 2
+  image:
+    repository: uni-book-store-backend
+    # Defaults to .Chart.AppVersion when empty.
+    tag: ""
+    pullPolicy: IfNotPresent
+  containerPort: 8080
+  service:
+    type: NodePort
+    port: 80
+    # nodePort is optional: leave empty to let Kubernetes assign one
+    # (required if the chart is installed more than once in a cluster).
+    nodePort: 30080
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  # Non-sensitive application configuration (ConfigMap -> env vars).
+  config:
+    KEYCLOAK_URI: "http://keycloak.local"
+    MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+    MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+    MANAGEMENT_INFO_ENV_ENABLED: "true"
+
+postgres:
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 5432
+  # Sensitive values live here (not in the templates). Not a real password.
+  auth:
+    database: "mydatabase"
+    username: "myuser"
+    password: "S3cr3tP@ssw0rd_demo"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  persistence:
+    enabled: true
+    size: "1Gi"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  host: "uni-book-store.local"
+  path: "/"
+  pathType: "Prefix"

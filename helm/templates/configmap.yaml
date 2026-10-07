@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uni-book-store.backend.fullname" . }}
+  labels:
+    {{- include "uni-book-store.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+data:
+  # DB connection points at the release's own Postgres Service (release-based name).
+  DB_HOST: {{ include "uni-book-store.postgres.fullname" . | quote }}
+  DB_PORT: {{ .Values.postgres.service.port | quote }}
+  SPRING_DATASOURCE_USERNAME: {{ .Values.postgres.auth.username | quote }}
+  # Also used by the Postgres container.
+  POSTGRES_DB: {{ .Values.postgres.auth.database | quote }}
+  POSTGRES_USER: {{ .Values.postgres.auth.username | quote }}
+  {{- range $key, $value := .Values.backend.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
