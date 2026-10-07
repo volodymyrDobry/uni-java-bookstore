@@ -15,6 +15,14 @@ spec:
       labels:
         app: backend
     spec:
+      # Make keycloak.local resolve INSIDE the pod to the minikube node, where
+      # the nginx ingress listens on :80 — so the backend can fetch the JWKS
+      # from the SAME issuer URL the browser uses. If `minikube ip` is not
+      # 192.168.49.2, update this address (see README).
+      hostAliases:
+        - ip: "192.168.49.2"
+          hostnames:
+            - keycloak.local
       containers:
         - name: backend
           image: uni-book-store-backend:1.0.0

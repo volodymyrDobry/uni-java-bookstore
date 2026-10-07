@@ -8,7 +8,10 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: uni-book-store.local
+    # Direct access to the backend API for debugging. The SPA itself reaches the
+    # backend same-origin through the frontend nginx proxy (uni-book-store.local/api),
+    # so this host is optional. uni-book-store.local is owned by the frontend.
+    - host: api.uni-book-store.local
       http:
         paths:
           - path: /

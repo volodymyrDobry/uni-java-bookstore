@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  namespace: uni-book-store
+  labels:
+    app: keycloak
+data:
+  # Minimal hand-written realm imported by Keycloak on startup (--import-realm).
+  # realm + public SPA client (PKCE) + ADMIN/USER roles + one test user.
+  realm.json: |
+    {
+      "realm": "uni-book-store",
+      "enabled": true,
+      "sslRequired": "none",
+      "roles": {
+        "realm": [
+          { "name": "ADMIN" },
+          { "name": "USER" }
+        ]
+      },
+      "clients": [
+        {
+          "clientId": "uni-book-store-client",
+          "enabled": true,
+          "protocol": "openid-connect",
+          "publicClient": true,
+          "standardFlowEnabled": true,
+          "directAccessGrantsEnabled": true,
+          "redirectUris": [
+            "http://uni-book-store.local/*"
+          ],
+          "postLogoutRedirectUris": [
+            "http://uni-book-store.local/*"
+          ],
+          "webOrigins": [
+            "http://uni-book-store.local"
+          ],
+          "attributes": {
+            "pkce.code.challenge.method": "S256",
+            "post.logout.redirect.uris": "http://uni-book-store.local/*"
+          }
+        }
+      ],
+      "users": [
+        {
+          "username": "testuser",
+          "enabled": true,
+          "emailVerified": true,
+          "email": "testuser@uni-book-store.local",
+          "firstName": "Test",
+          "lastName": "User",
+          "credentials": [
+            { "type": "password", "value": "password", "temporary": false }
+          ],
+          "realmRoles": [ "ADMIN", "USER" ]
+        }
+      ]
+    }

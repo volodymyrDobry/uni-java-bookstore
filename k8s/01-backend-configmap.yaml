@@ -8,7 +8,9 @@ metadata:
 data:
   DB_HOST: "postgres"
   DB_PORT: "5432"
-  KEYCLOAK_URI: "http://keycloak:8080"
+  # Variant Б (browser login): issuer must match the hostname the BROWSER uses,
+  # so the backend validates tokens against the same ingress URL (keycloak.local).
+  KEYCLOAK_URI: "http://keycloak.local"
   POSTGRES_DB: "mydatabase"
   POSTGRES_USER: "myuser"
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"

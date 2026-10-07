@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  namespace: uni-book-store
+  labels:
+    app: keycloak
+spec:
+  ingressClassName: nginx
+  rules:
+    # Keycloak must be reachable at the SAME host for the browser and the
+    # backend (keycloak.local) so the token issuer matches on both sides.
+    - host: keycloak.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080

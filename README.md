@@ -288,3 +288,70 @@ kubectl -n uni-book-store rollout status deploy/backend
 Валідний образ повернуто, rollout завершився успішно, усі поди `Running 1/1`:
 
 ![Виправлення образу](docs/lab3/img/7d-fix.webp)
+
+---
+
+## Повний стек у кластері: Keycloak + фронтенд (Варіант Б)
+
+Розширення лаби: до backend + Postgres додано **Keycloak** (зі своєю БД) і **React-фронтенд**,
+щоб працював реальний OAuth-логін з браузера.
+
+### Архітектура
+
+```
+Браузер
+  ├─ http://uni-book-store.local/        → Ingress → frontend (nginx+SPA)
+  │                                         └─ /api → proxy → backend:8080
+  └─ http://keycloak.local/              → Ingress → keycloak:8080
+backend  → валідує JWT, issuer = http://keycloak.local/realms/uni-book-store
+```
+
+**Ключ Варіанта Б:** і браузер, і бекенд звертаються до Keycloak за одним хостом
+`keycloak.local`, тож `issuer` у токені збігається з очікуваним бекендом. Усередині
+пода бекенда `keycloak.local` резолвиться у вузол (`hostAliases`), де ingress слухає :80.
+
+### Додаткові об'єкти (`k8s/09…19`)
+
+| Файли | Об'єкт |
+|-------|--------|
+| `09-keycloak-secret.yaml` | Secret (паролі admin + БД Keycloak) |
+| `10…12` | Keycloak Postgres: PVC + Deployment + Service |
+| `13-keycloak-realm-configmap.yaml` | realm `uni-book-store` (клієнт + ролі + тестовий юзер) |
+| `14…16` | Keycloak: Deployment (`--import-realm`) + Service + Ingress `keycloak.local` |
+| `17…19` | Frontend: Deployment + Service + Ingress `uni-book-store.local` |
+
+### Тестовий користувач
+
+| Логін | Пароль | Ролі |
+|-------|--------|------|
+| `testuser` | `password` | `ADMIN`, `USER` |
+
+Адмін-консоль Keycloak: `http://keycloak.local/admin` (admin / admin).
+
+### Запуск
+
+```bash
+# 1. /etc/hosts — усі хости на IP вузла (перевірте: minikube ip)
+echo "$(minikube ip) uni-book-store.local keycloak.local api.uni-book-store.local" | sudo tee -a /etc/hosts
+
+# 2. Якщо `minikube ip` != 192.168.49.2 — підправте hostAliases у 06-backend-deployment.yaml
+
+# 3. Зібрати та завантажити образ фронтенду (без VITE_API_URL -> same-origin /api)
+docker build \
+  --build-arg VITE_OIDC_AUTHORITY=http://keycloak.local/realms/uni-book-store \
+  --build-arg VITE_OIDC_CLIENT_ID=uni-book-store-client \
+  -t uni-book-store-frontend:1.0.0 \
+  ~/IdeaProjects/ui-book-store-client
+minikube image load uni-book-store-frontend:1.0.0
+
+# 4. Застосувати все
+kubectl apply -f k8s/
+kubectl -n uni-book-store rollout status deploy/keycloak --timeout=300s
+kubectl -n uni-book-store rollout status deploy/backend
+kubectl -n uni-book-store rollout status deploy/frontend
+
+# 5. Тунель до ingress (тримати відкритим, окремий термінал)
+minikube tunnel
+```
+
+Відкрити: **http://uni-book-store.local/** → увійти як `testuser` / `password`.
