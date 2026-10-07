@@ -5,10 +5,7 @@ metadata:
   namespace: uni-book-store
   labels:
     app: backend
-    app.kubernetes.io/part-of: uni-book-store
 spec:
-  # NodePort gives access both inside the cluster and from the host
-  # (via `minikube service backend -n uni-book-store`).
   type: NodePort
   selector:
     app: backend
@@ -17,4 +14,3 @@ spec:
       port: 80
       targetPort: 8080
       nodePort: 30080
-      protocol: TCP

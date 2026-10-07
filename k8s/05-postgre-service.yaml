@@ -7,7 +7,7 @@ metadata:
     app: postgres
     app.kubernetes.io/part-of: uni-book-store
 spec:
-  type: ClusterIP           # internal only — reached by the backend as "postgres:5432"
+  type: ClusterIP
   selector:
     app: postgres
   ports:

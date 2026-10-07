@@ -19,14 +19,14 @@ without it.
 | File | Object | Purpose |
 |------|--------|---------|
 | `00-namespace.yaml` | Namespace `uni-book-store` | isolates all lab objects |
-| `01-configmap.yaml` | ConfigMap `backend-config` | non-sensitive config (env vars) |
-| `02-secret.yaml` | Secret `backend-secret` | DB password (demo value) |
-| `03-postgres-pvc.yaml` | PersistentVolumeClaim | durable storage for PostgreSQL |
+| `01-backend-configmap.yaml` | ConfigMap `backend-config` | non-sensitive config (env vars) |
+| `02-backend-secret.yaml` | Secret `backend-secret` | DB password (demo value) |
+| `03-postgre-pvc.yaml` | PersistentVolumeClaim `postgres-pvc` | durable storage for PostgreSQL |
 | `04-postgres-deployment.yaml` | Deployment `postgres` | stateful DB component |
-| `05-postgres-service.yaml` | Service `postgres` (ClusterIP) | internal DB access |
+| `05-postgre-service.yaml` | Service `postgres` (ClusterIP) | internal DB access |
 | `06-backend-deployment.yaml` | Deployment `backend` | 2 replicas, probes, resources |
 | `07-backend-service.yaml` | Service `backend` (NodePort 30080) | in-cluster + host access |
-| `08-ingress.yaml` | Ingress `backend` | host access via nginx ingress |
+| `08-backend-ingress.yaml` | Ingress `backend` | host access via nginx ingress |
 
 ### Configuration parameters
 
@@ -135,3 +135,156 @@ kubectl -n uni-book-store set image deploy/backend backend=uni-book-store-backen
 kubectl delete -f k8s/
 minikube stop   # or: minikube delete
 ```
+
+---
+
+# Звіт про виконання (пункти 5–7)
+
+Скриншоти команд та Kubernetes Dashboard, що підтверджують виконання кожного пункту.
+
+## Пункт 5 — Розгортання застосунку
+
+### 5a. Застосування всіх маніфестів однією командою
+
+Спершу суха перевірка (`--dry-run=client`), потім реальне застосування `kubectl apply -f k8s/` — усі 9 об'єктів створено однією командою з каталогу.
+
+![Dry-run та apply усіх маніфестів](docs/lab3/img/5a-apply.webp)
+
+Команда ідемпотентна: повторний `apply` не перестворює об'єкти, а лише оновлює змінені (`unchanged` / `configured`).
+
+![Повторний apply — ідемпотентність](docs/lab3/img/5a-apply-idempotent.webp)
+
+### 5b. Перелік створених об'єктів (поди, Deployment, ReplicaSet, Service)
+
+```bash
+kubectl get pods
+kubectl get deploy
+kubectl get replicaset
+kubectl get service
+```
+
+![Об'єкти: pods, deploy, replicaset, service](docs/lab3/img/5b-objects.webp)
+
+Ті самі об'єкти в Kubernetes Dashboard (поди з образом `uni-book-store-backend:1.0.0`, споживання CPU/пам'яті завдяки metrics-server):
+
+![Поди в Dashboard](docs/lab3/img/5b-dashboard-pods.webp)
+
+### 5c. Відкриття застосунку з хоста
+
+Доступ через `kubectl port-forward` (надійно на docker-драйвері macOS), далі `http://localhost:8080/swagger-ui/index.html` та `/actuator/info`.
+
+![port-forward до Service backend](docs/lab3/img/5c-port-forward.webp)
+
+### 5d. ConfigMap і Secret справді потрапили в контейнер
+
+Значення з ConfigMap `backend-config`, видимі в Dashboard (ті самі, що читає застосунок):
+
+![ConfigMap backend-config у Dashboard](docs/lab3/img/5d-configmap.webp)
+
+Додатково перевіряється зсередини контейнера:
+
+```bash
+kubectl -n uni-book-store exec deploy/backend -- \
+  printenv DB_HOST DB_PORT KEYCLOAK_URI SPRING_DATASOURCE_PASSWORD INFO_APP_VERSION
+```
+
+## Пункт 6 — Керування життєвим циклом
+
+### 6a. Самовідновлення
+
+```bash
+kubectl -n uni-book-store delete pod -l app=backend --field-selector=status.phase=Running | head -1
+kubectl -n uni-book-store get pods -w
+```
+
+Після видалення пода ReplicaSet негайно створює новий, щоб відповідати бажаній кількості реплік (2).
+
+### 6b. Масштабування
+
+```bash
+kubectl -n uni-book-store scale deploy/backend --replicas=4
+kubectl -n uni-book-store get endpoints backend
+```
+
+Усі репліки додаються до endpoints Service, між якими балансується трафік.
+
+### 6c. Оновлення (rolling update 1.0.0 → 1.1.0)
+
+Зміна образу запускає поступову заміну подів. Нова ReplicaSet піднімається, стара «здувається» до нуля:
+
+![set image 1.1.0 та rollout history](docs/lab3/img/6c-set-image.webp)
+
+Процес rolling update у маніфесті й через `get rs` (стара RS → 0, нова → 2):
+
+![Rolling update через get rs](docs/lab3/img/6c-rolling-rs.webp)
+
+Той самий процес у Dashboard — одночасно `Pending` (новий), `Terminating` (старий) і `Running` (решта), тобто **нуль простою**:
+
+![Rolling update у Dashboard](docs/lab3/img/6c-dashboard-rolling.webp)
+
+### 6d. Історія оновлень та відкат
+
+```bash
+kubectl -n uni-book-store rollout history deploy/backend
+```
+
+![Історія ревізій](docs/lab3/img/6d-history.webp)
+
+Відкат до попередньої ревізії (теж rolling update, без простою):
+
+```bash
+kubectl -n uni-book-store rollout undo deploy/backend --to-revision=1
+```
+
+![Відкат та get rs](docs/lab3/img/6d-rollback.webp)
+
+## Пункт 7 — Діагностика
+
+### 7a. Навмисна помилка → ImagePullBackOff
+
+```bash
+kubectl -n uni-book-store set image deploy/backend backend=uni-book-store-backend:9.9.9-does-not-exist
+```
+
+Новий под проходить init-контейнер і застрягає на завантаженні неіснуючого образу:
+
+![Проблемний под ініціалізується](docs/lab3/img/7a-pod-init.webp)
+
+За кілька секунд — стан `ImagePullBackOff` (старі поди лишаються `Running` — застосунок не впав):
+
+![ImagePullBackOff](docs/lab3/img/7a-imagepullbackoff.webp)
+
+### 7b. Пошук причини (опис пода + Events)
+
+```bash
+kubectl -n uni-book-store describe pod <pod>
+```
+
+У секції Events — точна причина: `repository does not exist` для тега `9.9.9-does-not-exist`.
+
+![describe pod → Events](docs/lab3/img/7b-describe-events.webp)
+
+### 7c. Логи контейнера та вхід у контейнер
+
+Логи здорового пода (Spring Boot стартував, Tomcat на 8080):
+
+![Логи контейнера](docs/lab3/img/7c-logs.webp)
+
+Інтерактивний вхід у контейнер:
+
+```bash
+kubectl -n uni-book-store exec -it <healthy-pod> -- sh
+```
+
+![exec у контейнер](docs/lab3/img/7c-exec.webp)
+
+### 7d. Виправлення та повернення в робочий стан
+
+```bash
+kubectl -n uni-book-store set image deploy/backend backend=uni-book-store-backend:1.0.0
+kubectl -n uni-book-store rollout status deploy/backend
+```
+
+Валідний образ повернуто, rollout завершився успішно, усі поди `Running 1/1`:
+
+![Виправлення образу](docs/lab3/img/7d-fix.webp)
