@@ -30,9 +30,6 @@ data:
           "redirectUris": [
             "http://uni-book-store.local/*"
           ],
-          "postLogoutRedirectUris": [
-            "http://uni-book-store.local/*"
-          ],
           "webOrigins": [
             "http://uni-book-store.local"
           ],
