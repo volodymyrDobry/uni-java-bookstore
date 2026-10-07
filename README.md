@@ -332,7 +332,8 @@ backend  → валідує JWT, issuer = http://keycloak.local/realms/uni-book-
 
 ```bash
 # 1. /etc/hosts — усі хости на IP вузла (перевірте: minikube ip)
-echo "$(minikube ip) uni-book-store.local keycloak.local api.uni-book-store.local" | sudo tee -a /etc/hosts
+# docker-драйвер + `minikube tunnel` відкриває ingress на 127.0.0.1:
+echo "127.0.0.1 uni-book-store.local keycloak.local api.uni-book-store.local" | sudo tee -a /etc/hosts
 
 # 2. Якщо `minikube ip` != 192.168.49.2 — підправте hostAliases у 06-backend-deployment.yaml
 
