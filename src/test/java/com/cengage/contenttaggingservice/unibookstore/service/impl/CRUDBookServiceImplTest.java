@@ -9,6 +9,7 @@ import com.cengage.contenttaggingservice.unibookstore.dto.GetBooksRequest;
 import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBookDetailsRequest;
 import com.cengage.contenttaggingservice.unibookstore.mapper.BookMapper;
 import com.cengage.contenttaggingservice.unibookstore.repository.BookRepository;
+import com.cengage.contenttaggingservice.unibookstore.security.CurrentUser;
 import com.cengage.contenttaggingservice.unibookstore.utils.SecurityUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,6 +68,8 @@ class CRUDBookServiceImplTest {
                 true, new BigDecimal("9.99"), 10);
         BookResponse expectedResponse = sampleResponse();
 
+        when(securityUtils.getCurrentUser())
+                .thenReturn(new CurrentUser("alice", List.of("USER")));
         when(repository.save(any(Book.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(mapper.toResponse(any(Book.class)))
@@ -86,6 +89,7 @@ class CRUDBookServiceImplTest {
         assertThat(savedBook.getGenre()).isEqualTo(Genre.SCIENCE_FICTION);
         assertThat(savedBook.getImageUrl()).isEqualTo("img");
         assertThat(savedBook.isEnabled()).isTrue();
+        assertThat(savedBook.getCreatorId()).isEqualTo("alice");
 
         BookStock savedStock = savedBook.getStock();
         assertThat(savedStock).as("stock must be attached to the book").isNotNull();

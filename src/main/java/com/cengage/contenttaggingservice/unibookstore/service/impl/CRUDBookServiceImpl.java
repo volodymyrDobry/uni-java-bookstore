@@ -1,11 +1,14 @@
 package com.cengage.contenttaggingservice.unibookstore.service.impl;
 
+import com.cengage.contenttaggingservice.unibookstore.annotation.TimeTracker;
+import com.cengage.contenttaggingservice.unibookstore.annotation.Auditable;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Book;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.BookStock;
 import com.cengage.contenttaggingservice.unibookstore.dto.BookResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.CreateBookRequest;
 import com.cengage.contenttaggingservice.unibookstore.dto.GetBooksRequest;
 import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBookDetailsRequest;
+import com.cengage.contenttaggingservice.unibookstore.exception.NotFoundException;
 import com.cengage.contenttaggingservice.unibookstore.mapper.BookMapper;
 import com.cengage.contenttaggingservice.unibookstore.repository.BookRepository;
 import com.cengage.contenttaggingservice.unibookstore.service.CRUDBookService;
@@ -18,6 +21,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +34,7 @@ public class CRUDBookServiceImpl implements CRUDBookService {
 
     @Override
     @Transactional
+    @Auditable("BOOK_CREATED")
     public BookResponse createBook(CreateBookRequest request) {
         BookStock stock = BookStock.builder()
                 .price(request.price())
@@ -42,14 +48,27 @@ public class CRUDBookServiceImpl implements CRUDBookService {
                 .genre(request.genre())
                 .imageUrl(request.imageUrl())
                 .enabled(request.enabled())
+                .creatorId(securityUtils.getCurrentUser().username())
                 .build();
-        createdBook.setStock(stock);
+
+        createdBook.assignStock(stock);
 
         return mapper.toResponse(repository.save(createdBook));
     }
 
     @Override
     @Transactional
+    @Auditable("BOOKS_BULK_CREATED")
+    public List<BookResponse> createBooks(List<CreateBookRequest> requests) {
+        return requests.stream()
+                .map(this::createBook)
+                .toList();
+    }
+
+    @Override
+    @TimeTracker
+    @Transactional
+    @Auditable("BOOK_UPDATED")
     public BookResponse updateBookDetails(Long id, UpdateBookDetailsRequest request) {
         Book bookById = repository.findById(id).orElseThrow();
         mapper.updateBook(request, bookById);
@@ -62,6 +81,12 @@ public class CRUDBookServiceImpl implements CRUDBookService {
         Specification<Book> specification = BookSpecification.from(getBooksRequest, isEnabled);
         return repository.findAll(specification, pageable)
                 .map(mapper::toResponse);
+    }
+
+    @Override
+    public BookResponse findOne(Long id) {
+        return repository.findById(id).map(mapper::toResponse)
+                .orElseThrow(() -> new NotFoundException("Book not found"));
     }
 
 }

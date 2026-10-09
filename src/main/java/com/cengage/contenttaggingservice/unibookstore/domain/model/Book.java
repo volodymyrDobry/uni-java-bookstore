@@ -50,4 +50,12 @@ public class Book {
 
     @OneToOne(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private BookStock stock;
+
+    @Column(name = "creator_id", nullable = false, updatable = false)
+    private String creatorId;
+
+    public void assignStock(BookStock stock) {
+        stock.setBook(this);
+        this.stock = stock;
+    }
 }

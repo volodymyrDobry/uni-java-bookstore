@@ -356,3 +356,5 @@ minikube tunnel
 ```
 
 Відкрити: **http://uni-book-store.local/** → увійти як `testuser` / `password`.
+
+

@@ -1,5 +1,6 @@
 package com.cengage.contenttaggingservice.unibookstore.service.impl;
 
+import com.cengage.contenttaggingservice.unibookstore.annotation.BookOwner;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.BookStock;
 import com.cengage.contenttaggingservice.unibookstore.dto.BookStockResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.StockRequest;
@@ -15,6 +16,7 @@ public class BookStockServiceImpl implements BookStockService {
 
     private final BookStockRepository repository;
 
+    @BookOwner("#bookId")
     @Override
     public BookStockResponse updateBookStock(Long bookId, StockRequest request) {
         BookStock stock = repository.findByBookId(bookId);

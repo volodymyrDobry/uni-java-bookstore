@@ -1,0 +1,55 @@
+### @TimeTracker  ->  TimeTrackerAspect (@Around), on CRUDBookServiceImpl#updateBookDetails.
+### Like @Auditable, the effect is log-only. Triggering the PATCH below should print:
+###
+###   Starting timeTracker for method: CRUDBookServiceImpl.updateBookDetails(..)
+###   Method has finished its execution: CRUDBookServiceImpl.updateBookDetails(..), timeMs: <n>
+###
+### NOTE: the aspect reads stopWatch.getTotalTimeMillis() without calling stopWatch.stop(),
+### so <n> currently prints as 0. The @Around advice itself still fires correctly.
+### updateBookDetails requires ADMIN, so we log in as admin and create a book to update.
+
+### login admin
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=admin&password=admin
+
+> {% client.global.set("admin_token", response.body.access_token); %}
+
+### create a book to update (so the PATCH has a valid, existing id)
+POST http://localhost:8081/api/v1/books
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "title": "Timed Book",
+  "description": "Will be updated to trigger @TimeTracker",
+  "author": "Author",
+  "genre": "ADVENTURE",
+  "imageUrl": "https://example.com/timed.jpg",
+  "enabled": true,
+  "price": 18.00,
+  "quantity": 4
+}
+
+> {%
+    client.test("book created", function () {
+        client.assert(response.status === 201, "Expected 201 but got " + response.status);
+    });
+    client.global.set("timed_book_id", response.body.id);
+%}
+
+### updateBookDetails -> @Around @TimeTracker fires, expect 200 + two timeTracker log lines
+PATCH http://localhost:8081/api/v1/books/{{timed_book_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "description": "Updated - watch the timeTracker start/finish log lines"
+}
+
+> {%
+    client.test("updateBookDetails returns 200 (timeTracker lines expected in logs)", function () {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+    });
+%}

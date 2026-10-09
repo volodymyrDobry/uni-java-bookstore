@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/001-initial-schema-and-seed.yaml
+  - include:
+      file: db/changelog/002-add-book-creator-id.yaml
