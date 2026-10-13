@@ -62,3 +62,9 @@ ingress:
   host: "uni-book-store.local"
   path: "/"
   pathType: "Prefix"
+
+# Optional bitnami/postgresql dependency (Task 9a). OFF by default — the chart
+# uses its own Postgres templates. Enable only to demo the dependency:
+#   helm install ... --set postgresql.enabled=true
+postgresql:
+  enabled: false
