@@ -36,11 +36,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Exercises {@link AuditAspect} against the real {@link CRUDBookServiceImpl} behind its Spring
- * proxy. The headline case is {@link #bulkCreateDoesNotAuditInnerSelfInvokedCreateBook()} which
- * demonstrates that AOP advice is lost when a bean calls its own annotated method via {@code this}.
- */
 class CRUDBookServiceAuditAspectTest {
 
     private static final Long BOOK_ID = 42L;
@@ -99,11 +94,8 @@ class CRUDBookServiceAuditAspectTest {
 
         service.createBooks(List.of(request(), request()));
 
-        // The outer, proxied call is audited exactly once...
         assertThat(auditEvents("BOOKS_BULK_CREATED")).hasSize(1);
-        // ...but the two inner this.createBook(...) calls bypass the proxy, so NONE are audited.
         assertThat(auditEvents("BOOK_CREATED")).isEmpty();
-        // The business logic still runs for every element (both books persisted).
         verify(repository, times(2)).save(any(Book.class));
     }
 

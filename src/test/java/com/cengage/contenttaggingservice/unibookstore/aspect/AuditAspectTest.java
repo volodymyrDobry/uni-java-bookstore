@@ -23,11 +23,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Verifies the {@link AuditAspect} mechanics in isolation against a tiny proxied bean:
- * the {@code @AfterReturning} advice logs success and the {@code @AfterThrowing} advice
- * logs failure (and lets the exception propagate).
- */
 class AuditAspectTest {
 
     private AnnotationConfigApplicationContext context;

@@ -1,0 +1,19 @@
+### Admin order stream (SSE) and period receipt export (ZIP). Requires ADMIN.
+
+### login admin
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=admin&password=admin
+
+> {% client.global.set("admin_token", response.body.access_token); %}
+
+### subscribe to the live new-order stream (SSE) — leave open, then place an order as a user
+GET http://localhost:8081/api/v1/admin/orders/stream
+Authorization: Bearer {{admin_token}}
+Accept: text/event-stream
+
+### export all receipts in a period as a ZIP (from/to are ISO-8601 instants)
+GET http://localhost:8081/api/v1/admin/orders/receipts/export?from=2026-01-01T00:00:00Z&to=2027-01-01T00:00:00Z
+Authorization: Bearer {{admin_token}}
+Accept: application/zip

@@ -1,0 +1,41 @@
+### Ordering flow (user). Requires the app restarted with the new code and LocalStack running
+### (docker compose brings up localstack automatically via spring-boot-docker-compose).
+
+### login user
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=user&password=user
+
+> {% client.global.set("user_token", response.body.access_token); %}
+
+### put a book in the basket first (book 1 is seeded)
+POST http://localhost:8081/api/v1/basket
+Authorization: Bearer {{user_token}}
+Content-Type: application/json
+
+{
+  "bookId": 1,
+  "quantity": 1
+}
+
+### place the order from the basket -> 202 Accepted, status PENDING (receipt built async)
+POST http://localhost:8081/api/v1/orders
+Authorization: Bearer {{user_token}}
+
+> {%
+    client.test("order accepted", function () {
+        client.assert(response.status === 202, "Expected 202 but got " + response.status);
+        client.assert(response.body.status === "PENDING", "Expected PENDING");
+    });
+    client.global.set("order_id", response.body.id);
+%}
+
+### list my orders (re-run until status becomes PDF_READY once the async pipeline finishes)
+GET http://localhost:8081/api/v1/orders
+Authorization: Bearer {{user_token}}
+
+### download the receipt PDF (works once the order is PDF_READY)
+GET http://localhost:8081/api/v1/orders/{{order_id}}/receipt
+Authorization: Bearer {{user_token}}
+Accept: application/pdf

@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/001-initial-schema-and-seed.yaml
   - include:
       file: db/changelog/002-add-book-creator-id.yaml
+  - include:
+      file: db/changelog/003-create-ordering.yaml
