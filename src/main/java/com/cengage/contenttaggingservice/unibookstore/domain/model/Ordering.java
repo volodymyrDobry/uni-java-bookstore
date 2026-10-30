@@ -47,6 +47,9 @@ public class Ordering {
     @Column(name = "pdf_location")
     private String pdfLocation;
 
+    @Column(name = "receipt_attempts", nullable = false)
+    private int receiptAttempts;
+
     @Builder.Default
     @OneToMany(mappedBy = "ordering", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();

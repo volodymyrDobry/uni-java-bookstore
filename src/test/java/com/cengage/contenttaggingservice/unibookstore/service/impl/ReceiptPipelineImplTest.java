@@ -18,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -104,5 +105,25 @@ class ReceiptPipelineImplTest {
         long elapsedMillis = (System.nanoTime() - start) / 1_000_000;
 
         assertThat(elapsedMillis).isLessThan(500);
+    }
+
+    @Test
+    void generateAndStoreSyncReturnsStoredKey() {
+        stubAssembleAndRender();
+        when(storage.upload(anyString(), any(), eq("application/pdf")))
+                .thenReturn(CompletableFuture.completedFuture("receipts/alice/1.pdf"));
+
+        assertThat(pipeline(15).generateAndStoreSync(snapshot)).isEqualTo("receipts/alice/1.pdf");
+    }
+
+    @Test
+    void generateAndStoreSyncPropagatesFailure() {
+        stubAssembleAndRender();
+        when(storage.upload(anyString(), any(), eq("application/pdf")))
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("s3 down")));
+
+        assertThatThrownBy(() -> pipeline(15).generateAndStoreSync(snapshot))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("s3 down");
     }
 }

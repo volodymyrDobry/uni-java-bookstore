@@ -1,0 +1,28 @@
+#<?xml version="1.0" encoding="UTF-8"?>
+#<databaseChangeLog
+#        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+#        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+#        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+#        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+#
+#    <!-- Quartz's own DDL for the JDBC job store, copied out of the Quartz jar (see db/quartz). Liquibase owns the schema. -->
+#    <changeSet id="003-create-quartz-tables" author="course">
+#        <sqlFile path="db/quartz/tables_mysql_innodb.sql"
+#                 dbms="mysql,mariadb"
+#                 relativeToChangelogFile="false"
+#                 splitStatements="true"
+#                 endDelimiter=";"/>
+#    </changeSet>
+#
+#</databaseChangeLog>
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-quartz-tables
+      author: volodymyr.dobrianskyi
+      changes:
+        - sqlFile:
+            path: db/quartz/tables_postgresql.sql
+            dbms: postgresql
+            relativeToChangelogFile: false
+            splitStatements: true
+            endDelimiter: ;

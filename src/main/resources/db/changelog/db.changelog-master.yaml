@@ -5,3 +5,7 @@ databaseChangeLog:
       file: db/changelog/002-add-book-creator-id.yaml
   - include:
       file: db/changelog/003-create-ordering.yaml
+  - include:
+      file: db/changelog/004-create-quartz-tables.yaml
+  - include:
+      file: db/changelog/005-add-ordering-receipt-attempts.yaml

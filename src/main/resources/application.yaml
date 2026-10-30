@@ -30,6 +30,21 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    overwrite-existing-jobs: true
+    wait-for-jobs-to-complete-on-shutdown: true
+    properties:
+      org:
+        quartz:
+          threadPool:
+            threadCount: 3
+          jobStore:
+            misfireThreshold: 10000
+
   docker:
     compose:
       enabled: true
@@ -60,7 +75,7 @@ security:
   cors:
     allowed-headers: "*"
     allowed-origins:
-    - http://localhost:3000
+      - http://localhost:3000
     allowed-methods:
       - GET
       - POST
