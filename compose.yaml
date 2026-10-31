@@ -7,6 +7,29 @@ services:
       - 'POSTGRES_USER=myuser'
     ports:
       - '5432:5432'
+    volumes:
+      - postgres-db-data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U myuser -d mydatabase" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  keycloak-db:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=keycloak'
+      - 'POSTGRES_PASSWORD=keycloak'
+      - 'POSTGRES_USER=keycloak'
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U keycloak -d keycloak" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
@@ -14,8 +37,21 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
     ports:
       - "8080:8080"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /realms/master HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200' <&3" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   localstack:
     image: localstack/localstack:3
@@ -25,3 +61,69 @@ services:
     ports:
       - "4566:4566"
 
+  book-management-service:
+    build:
+      context: .
+      dockerfile: book-management-service/Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      KEYCLOAK_URI: http://keycloak:8080
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      KEYCLOAK_URI: http://keycloak:8080
+      S3_ENDPOINT: http://localstack:4566
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      localstack:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ~/IdeaProjects/ui-book-store-client
+      dockerfile: Dockerfile
+      args:
+        # Empty API URL: the client calls same-origin /api and Nginx fans the
+        # requests out to book-management-service and order-service.
+        VITE_API_URL: ${VITE_API_URL:-}
+        # Must match the backend's issuer host (keycloak:8080) so the token's
+        # `iss` claim is accepted. Requires `127.0.0.1 keycloak` in /etc/hosts
+        # so the browser can resolve it.
+        VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:-http://keycloak:8080/realms/uni-book-store}
+        VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-uni-book-store-client}
+    container_name: react-app
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      book-management-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    restart: on-failure
+
+
+volumes:
+  keycloak-db-data:
+  postgres-db-data:
