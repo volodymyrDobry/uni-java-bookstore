@@ -53,7 +53,7 @@ class QuartzConfigTest {
 
         assertThat(daily.getMisfireInstruction()).isEqualTo(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
         assertThat(weekly.getMisfireInstruction()).isEqualTo(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-        assertThat(daily.getTimeZone().getID()).isEqualTo("UTC");
-        assertThat(weekly.getTimeZone().getID()).isEqualTo("UTC");
+        assertThat(daily.getTimeZone().getID()).isEqualTo("Europe/Kyiv");
+        assertThat(weekly.getTimeZone().getID()).isEqualTo("Europe/Kyiv");
     }
 }
