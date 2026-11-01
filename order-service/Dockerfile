@@ -1,5 +1,7 @@
 # Build the order-service bootable jar (multi-module build; context is the repo root).
-FROM eclipse-temurin:25-jdk AS build
+# Build on the native runner arch (the jar is arch-independent); only the
+# runtime base below varies per target platform — fast multi-arch, no emulation.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
 COPY . .
 RUN chmod +x gradlew && ./gradlew :order-service:bootJar --no-daemon -x test
