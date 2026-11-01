@@ -8,6 +8,15 @@
 nameOverride: ""
 fullnameOverride: ""
 
+# Secret handling. Empty (default): the chart renders its own demo Secrets.
+# Set to the name of a pre-created Secret (e.g. for GitOps, so no plaintext
+# secret lives in Git) and the chart skips rendering that Secret and references
+# the given name instead. Required keys:
+#   existingSecret:         SPRING_DATASOURCE_PASSWORD, POSTGRES_PASSWORD, S3_ACCESS_KEY, S3_SECRET_KEY
+#   existingKeycloakSecret: KEYCLOAK_ADMIN_PASSWORD, KC_DB_PASSWORD, POSTGRES_PASSWORD
+existingSecret: ""
+existingKeycloakSecret: ""
+
 # ---------------------------------------------------------------------------
 # book-management-service — catalogue + stock (owns the books/stock data).
 # ---------------------------------------------------------------------------

@@ -40,7 +40,7 @@ spec:
             - configMapRef:
                 name: {{ include "uni-book-store.fullname" . }}-config
             - secretRef:
-                name: {{ include "uni-book-store.fullname" . }}
+                name: {{ include "uni-book-store.secretName" . }}
           resources:
             {{- toYaml .Values.orderService.resources | nindent 12 }}
           # Hold liveness/readiness off until the app has booted (~45s), so a slow
