@@ -8,7 +8,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    {{- include "uni-book-store.postgres.selectorLabels" . | nindent 4 }}
+    {{- include "uni-book-store.selectorLabels" (dict "ctx" . "component" "postgres") | nindent 4 }}
   ports:
     - port: {{ .Values.postgres.service.port }}
       targetPort: {{ .Values.postgres.service.port }}

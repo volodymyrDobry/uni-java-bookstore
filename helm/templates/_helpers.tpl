@@ -23,14 +23,39 @@ installed multiple times in one cluster without object-name collisions.
 {{- end -}}
 
 {{/*
-Component-specific object names (release-based).
+Component-specific object names (release-based). Each component's Service name is
+also its in-cluster DNS name, which peers and the frontend gateway rely on.
 */}}
-{{- define "uni-book-store.backend.fullname" -}}
-{{- printf "%s-backend" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- define "uni-book-store.bookManagement.fullname" -}}
+{{- printf "%s-book-management" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "uni-book-store.orderService.fullname" -}}
+{{- printf "%s-order-service" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "uni-book-store.frontend.fullname" -}}
+{{- printf "%s-frontend" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "uni-book-store.postgres.fullname" -}}
 {{- printf "%s-postgres" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "uni-book-store.keycloak.fullname" -}}
+{{- printf "%s-keycloak" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "uni-book-store.keycloakDb.fullname" -}}
+{{- printf "%s-keycloak-db" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "uni-book-store.activemq.fullname" -}}
+{{- printf "%s-activemq" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "uni-book-store.localstack.fullname" -}}
+{{- printf "%s-localstack" (include "uni-book-store.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -54,19 +79,25 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{/*
-Selector labels for the BACKEND component.
+Selector labels for a component. Call with a dict:
+  (dict "ctx" . "component" "book-management")
 */}}
-{{- define "uni-book-store.backend.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "uni-book-store.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: backend
+{{- define "uni-book-store.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "uni-book-store.name" .ctx }}
+app.kubernetes.io/instance: {{ .ctx.Release.Name }}
+app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 
 {{/*
-Selector labels for the POSTGRES component.
+hostAliases block so backend pods resolve the Keycloak ingress host to the node
+and validate JWTs against the SAME issuer URL the browser uses. Rendered only
+when .Values.keycloak.hostAliasIp is set.
 */}}
-{{- define "uni-book-store.postgres.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "uni-book-store.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: postgres
+{{- define "uni-book-store.keycloakHostAliases" -}}
+{{- if .Values.keycloak.hostAliasIp }}
+hostAliases:
+  - ip: {{ .Values.keycloak.hostAliasIp | quote }}
+    hostnames:
+      - {{ .Values.ingress.keycloakHost | quote }}
+{{- end }}
 {{- end -}}

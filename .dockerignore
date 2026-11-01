@@ -1,0 +1,17 @@
+# Build outputs and caches — the image rebuilds the jar inside the container.
+build/
+*/build/
+.gradle/
+*/.gradle/
+
+# VCS and IDE
+.git/
+.idea/
+*.iml
+
+# Local infra / docs that the image does not need
+k8s/
+helm/
+docs/
+http-tests/
+tmp/

@@ -23,6 +23,13 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
+          volumeMounts:
+            # Override the image's Docker-Compose gateway config with the
+            # Kubernetes one (static Service upstreams instead of Docker DNS).
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
           resources:
             requests:
               cpu: "50m"
@@ -40,3 +47,10 @@ spec:
               path: /
               port: 80
             periodSeconds: 15
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: frontend-nginx
+            items:
+              - key: default.conf
+                path: default.conf

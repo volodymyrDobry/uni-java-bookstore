@@ -3,37 +3,39 @@
    Release:   {{ .Release.Name }}
    Namespace: {{ .Release.Namespace }}
 
-1. Wait until the backend is ready:
+1. Wait until the services are ready:
 
-   kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "uni-book-store.backend.fullname" . }}
+   kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "uni-book-store.bookManagement.fullname" . }}
+   kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "uni-book-store.orderService.fullname" . }}
+   kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "uni-book-store.frontend.fullname" . }}
 
 2. Open the application in a browser:
 {{- if .Values.ingress.enabled }}
 
-   Ingress is enabled on host "{{ .Values.ingress.host }}".
-   With the docker driver on macOS, run `minikube tunnel` and add to /etc/hosts:
+   Ingress is enabled. With the docker driver on macOS, run `minikube tunnel`
+   and map both hosts to the node in /etc/hosts:
 
-     127.0.0.1 {{ .Values.ingress.host }}
+     127.0.0.1 {{ .Values.ingress.frontendHost }}
+     127.0.0.1 {{ .Values.ingress.keycloakHost }}
 
-   Then open:  http://{{ .Values.ingress.host }}/swagger-ui/index.html
-{{- else if eq .Values.backend.service.type "NodePort" }}
+   Then open:  http://{{ .Values.ingress.frontendHost }}/
 
-   Service type is NodePort. Open it with:
+   NOTE: the backend pods resolve "{{ .Values.ingress.keycloakHost }}" via a hostAlias
+   to {{ .Values.keycloak.hostAliasIp | default "<unset>" }} (usually `minikube ip`). Update
+   keycloak.hostAliasIp if your node IP differs.
+{{- else if eq .Values.frontend.service.type "NodePort" }}
 
-     minikube service {{ include "uni-book-store.backend.fullname" . }} -n {{ .Release.Namespace }}
+   The frontend Service is a NodePort. Open it with:
+
+     minikube service {{ include "uni-book-store.frontend.fullname" . }} -n {{ .Release.Namespace }}
 {{- else }}
 
-   Service type is {{ .Values.backend.service.type }}. Forward a local port:
+   The frontend Service type is {{ .Values.frontend.service.type }}. Forward a local port:
 
-     kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "uni-book-store.backend.fullname" . }} 8088:{{ .Values.backend.service.port }}
+     kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "uni-book-store.frontend.fullname" . }} 8088:{{ .Values.frontend.service.port }}
 
-   Then open:  http://localhost:8088/swagger-ui/index.html
+   Then open:  http://localhost:8088/
 {{- end }}
-
-   Public endpoints (no auth needed):
-     /actuator/health          -> {"status":"UP"}
-     /actuator/info            -> application version
-     /swagger-ui/index.html    -> API docs
 
 3. Inspect the release:
 

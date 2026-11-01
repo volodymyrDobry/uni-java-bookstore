@@ -1,8 +1,9 @@
 # uni-book-store — Helm chart
 
-Helm-чарт для backend-сервісу **uni-book-store** (Spring Boot) та його бази даних
-PostgreSQL. Переписаний з Kubernetes-маніфестів лабораторної №3, параметризований
-для кількох середовищ (dev / prod).
+Helm-чарт для всього стека **uni-book-store**, у паритеті з `docker compose`:
+два мікросервіси Spring Boot (**book-management-service**, **order-service**),
+React-SPA за nginx-шлюзом, PostgreSQL, Keycloak (+ власна БД), ActiveMQ та
+LocalStack (S3). Параметризований для кількох середовищ (dev / prod).
 
 ## version vs appVersion
 
@@ -14,41 +15,43 @@ PostgreSQL. Переписаний з Kubernetes-маніфестів лабор
 | `appVersion` | **застосунок**, який чарт розгортає (backend-образ) | `1.0.0` |
 
 Приклад: правка шаблону без зміни коду → `version 0.1.0 → 0.2.0`, `appVersion` незмінний.
-Нова версія backend → `appVersion 1.0.0 → 1.1.0`. `appVersion` також використовується як
-**дефолтний тег образу** (`backend.image.tag` = `.Chart.AppVersion`, якщо порожній).
+Нова версія застосунку → `appVersion 1.0.0 → 1.1.0`. `appVersion` також використовується як
+**дефолтний тег образів** сервісів (`*.image.tag` = `.Chart.AppVersion`, якщо порожній).
 
 ## Параметри values
 
 | Параметр | Опис | Default (dev) |
 |----------|------|---------------|
-| `backend.replicaCount` | кількість реплік backend | `1` |
-| `backend.image.repository` | репозиторій образу backend | `uni-book-store-backend` |
-| `backend.image.tag` | тег образу (порожній → `appVersion`) | `""` → `1.0.0` |
-| `backend.image.pullPolicy` | політика завантаження образу | `IfNotPresent` |
-| `backend.containerPort` | порт контейнера backend | `8080` |
-| `backend.service.type` | тип Service backend | `NodePort` |
-| `backend.service.port` | порт Service backend | `80` |
-| `backend.service.nodePort` | фіксований NodePort (порожній → авто) | `30080` |
-| `backend.resources` | requests/limits CPU та памʼяті | `250m/512Mi → 500m/768Mi` |
-| `backend.config.KEYCLOAK_URI` | базовий URL Keycloak (issuer) | `http://keycloak.local` |
-| `backend.config.MANAGEMENT_*` | налаштування actuator (health/info/probes) | див. values.yaml |
-| `postgres.image.repository` | образ PostgreSQL | `postgres` |
-| `postgres.image.tag` | тег образу PostgreSQL | `16-alpine` |
-| `postgres.service.port` | порт БД | `5432` |
-| `postgres.auth.database` | імʼя БД | `mydatabase` |
-| `postgres.auth.username` | користувач БД | `myuser` |
-| `postgres.auth.password` | пароль БД (demo, не реальний) | `S3cr3tP@ssw0rd_demo` |
-| `postgres.resources` | requests/limits для БД | `100m/128Mi → 500m/256Mi` |
-| `postgres.persistence.enabled` | **прапорець** PVC (durable storage) | `true` |
-| `postgres.persistence.size` | розмір PVC | `1Gi` |
-| `ingress.enabled` | **прапорець** Ingress | `true` |
-| `ingress.className` | IngressClass | `nginx` |
-| `ingress.host` | хост Ingress | `uni-book-store.local` |
-| `ingress.path` / `ingress.pathType` | шлях / тип шляху | `/` / `Prefix` |
+| `bookManagement.replicaCount` | репліки book-management-service | `1` |
+| `bookManagement.image.repository` / `.tag` | образ / тег (порожній → `appVersion`) | `book-management-service` / `1.0.0` |
+| `bookManagement.containerPort` / `.service.port` | порт контейнера / Service | `8081` |
+| `orderService.replicaCount` | репліки order-service | `1` |
+| `orderService.image.repository` / `.tag` | образ / тег | `order-service` / `1.0.0` |
+| `orderService.containerPort` / `.service.port` | порт контейнера / Service | `8083` |
+| `frontend.image.repository` / `.tag` | образ SPA-шлюзу / тег | `uni-book-store-frontend` / `1.0.0` |
+| `frontend.service.type` / `.nodePort` | тип Service / фіксований NodePort | `NodePort` / `30081` |
+| `config.*` | спільні env (S3_REGION, S3_BUCKET, MANAGEMENT_*) | див. values.yaml |
+| `secrets.s3AccessKey` / `.s3SecretKey` | ключі LocalStack (demo) | `test` / `test` |
+| `postgres.auth.*` | БД застосунку (database/username/password) | `mydatabase` / `myuser` / demo |
+| `postgres.persistence.enabled` / `.size` | **прапорець** PVC / розмір | `true` / `1Gi` |
+| `activemq.image` / `.openwirePort` / `.consolePort` | брокер ActiveMQ | `apache/activemq-classic:6.2.0` / `61616` / `8161` |
+| `localstack.image` / `.port` | емуляція S3 | `localstack/localstack:3` / `4566` |
+| `keycloak.image` / `.adminUser` / `.adminPassword` | Keycloak (demo-креденшли) | `quay.io/keycloak/keycloak:25.0` / `admin` / `admin` |
+| `keycloak.hostAliasIp` | IP вузла для `hostAlias` issuer-хоста (порожній → без alias) | `192.168.49.2` |
+| `keycloakDb.auth.*` / `.persistence.*` | БД Keycloak / PVC | `keycloak` / `true` |
+| `ingress.enabled` / `.className` | **прапорець** Ingress / IngressClass | `true` / `nginx` |
+| `ingress.frontendHost` | хост SPA (точка входу) | `uni-book-store.local` |
+| `ingress.keycloakHost` | хост Keycloak (спільний issuer) | `keycloak.local` |
 | `postgresql.enabled` | увімкнути залежний чарт PostgreSQL (bitnami, Задача 9a) | `false` |
 
-> **Чутливі значення** (`postgres.auth.password`) беруться з values і потрапляють у Secret —
-> у шаблонах паролів немає. Реальні паролі у файлах значень **не зберігаються**.
+> **Чутливі значення** (`postgres.auth.password`, `keycloak.*Password`, S3-ключі) беруться
+> з values і потрапляють у Secret — у шаблонах паролів немає. Реальні паролі у файлах
+> значень **не зберігаються**.
+>
+> **Issuer Keycloak:** і браузер, і сервіси звертаються до одного хоста
+> (`ingress.keycloakHost`), тому `iss` у токені збігається з валідацією на бекенді.
+> Поди сервісів резолвлять цей хост у вузол через `hostAlias` (`keycloak.hostAliasIp`,
+> зазвичай `minikube ip`).
 
 ## Встановлення
 
@@ -79,7 +82,7 @@ values.yaml  <  -f файл  <  --set
 (дефолти)       (середовище)   (точкове перевизначення)
 ```
 
-Приклад: `helm install ... -f helm/values-prod.yaml --set backend.replicaCount=5`
+Приклад: `helm install ... -f helm/values-prod.yaml --set orderService.replicaCount=5`
 → `replicaCount = 5` (бо `--set` має найвищий пріоритет).
 
 ## Залежність (Задача 9a)
@@ -99,7 +102,7 @@ helm install uni-book-store helm/ -n uni-book-store --create-namespace \
 ## Життєвий цикл релізу
 
 ```bash
-helm upgrade uni-book-store helm/ -f helm/values-dev.yaml --set backend.image.tag=1.1.0 -n uni-book-store
+helm upgrade uni-book-store helm/ -f helm/values-dev.yaml --set orderService.image.tag=1.1.0 -n uni-book-store
 helm history  uni-book-store -n uni-book-store
 helm rollback uni-book-store 1 -n uni-book-store
 helm uninstall uni-book-store -n uni-book-store

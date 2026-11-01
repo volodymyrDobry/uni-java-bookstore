@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activemq
+  namespace: uni-book-store
+  labels:
+    app: activemq
+    app.kubernetes.io/part-of: uni-book-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: activemq
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: activemq
+        app.kubernetes.io/part-of: uni-book-store
+    spec:
+      containers:
+        - name: activemq
+          image: apache/activemq-classic:6.2.0
+          ports:
+            - name: openwire
+              containerPort: 61616
+            - name: console
+              containerPort: 8161
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            tcpSocket:
+              port: 61616
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 61616
+            initialDelaySeconds: 20
+            periodSeconds: 15

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: activemq
+  namespace: uni-book-store
+  labels:
+    app: activemq
+    app.kubernetes.io/part-of: uni-book-store
+spec:
+  type: ClusterIP
+  selector:
+    app: activemq
+  ports:
+    - name: openwire
+      port: 61616
+      targetPort: 61616
+    - name: console
+      port: 8161
+      targetPort: 8161

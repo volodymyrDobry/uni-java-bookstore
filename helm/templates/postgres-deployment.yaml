@@ -11,11 +11,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "uni-book-store.postgres.selectorLabels" . | nindent 6 }}
+      {{- include "uni-book-store.selectorLabels" (dict "ctx" . "component" "postgres") | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "uni-book-store.postgres.selectorLabels" . | nindent 8 }}
+        {{- include "uni-book-store.selectorLabels" (dict "ctx" . "component" "postgres") | nindent 8 }}
     spec:
       containers:
         - name: postgres
