@@ -42,7 +42,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    # Surfaced at /actuator/info so each deployed image tag is identifiable
+    # (used by the GitOps update demo in Lab 5). Set via the APP_VERSION env.
+    version: ${APP_VERSION:dev}
 
 server:
   port: ${SERVER_PORT:8081}

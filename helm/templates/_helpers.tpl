@@ -59,6 +59,19 @@ also its in-cluster DNS name, which peers and the frontend gateway rely on.
 {{- end -}}
 
 {{/*
+Secret names. When `existingSecret` / `existingKeycloakSecret` is set, the chart
+does not render that Secret (it is created out-of-band, e.g. `kubectl create secret`)
+and every reference points at the provided name — so no plaintext secret lives in Git.
+*/}}
+{{- define "uni-book-store.secretName" -}}
+{{- .Values.existingSecret | default (include "uni-book-store.fullname" .) -}}
+{{- end -}}
+
+{{- define "uni-book-store.keycloakSecretName" -}}
+{{- .Values.existingKeycloakSecret | default (include "uni-book-store.keycloak.fullname" .) -}}
+{{- end -}}
+
+{{/*
 Chart name and version, used as a label.
 */}}
 {{- define "uni-book-store.chart" -}}

@@ -6,6 +6,9 @@ RUN chmod +x gradlew && ./gradlew :book-management-service:bootJar --no-daemon -
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
+# Build-time version, surfaced at runtime via /actuator/info (info.app.version).
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
 COPY --from=build /workspace/book-management-service/build/libs/*.jar app.jar
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]

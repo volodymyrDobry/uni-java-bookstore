@@ -30,7 +30,7 @@ spec:
             - name: KEYCLOAK_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "uni-book-store.keycloak.fullname" . }}
+                  name: {{ include "uni-book-store.keycloakSecretName" . }}
                   key: KEYCLOAK_ADMIN_PASSWORD
             - name: KC_DB
               value: postgres
@@ -41,7 +41,7 @@ spec:
             - name: KC_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "uni-book-store.keycloak.fullname" . }}
+                  name: {{ include "uni-book-store.keycloakSecretName" . }}
                   key: KC_DB_PASSWORD
             # Public URL the BROWSER uses; tokens are issued with this issuer, which
             # the backend services validate against.
