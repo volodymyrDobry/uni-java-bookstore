@@ -4,23 +4,20 @@ import com.cengage.contenttaggingservice.unibookstore.domain.enums.OrderStatus;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Basket;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Book;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.BookItem;
-import com.cengage.contenttaggingservice.unibookstore.domain.model.BookStock;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.OrderItem;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Ordering;
-import com.cengage.contenttaggingservice.unibookstore.dto.OrderLine;
 import com.cengage.contenttaggingservice.unibookstore.dto.OrderResponse;
-import com.cengage.contenttaggingservice.unibookstore.dto.OrderSnapshot;
 import com.cengage.contenttaggingservice.unibookstore.dto.ReceiptDownload;
 import com.cengage.contenttaggingservice.unibookstore.exception.InsufficientStockException;
 import com.cengage.contenttaggingservice.unibookstore.exception.NotFoundException;
 import com.cengage.contenttaggingservice.unibookstore.exception.UserNotAllowedException;
 import com.cengage.contenttaggingservice.unibookstore.mapper.OrderMapper;
+import com.cengage.contenttaggingservice.unibookstore.messaging.OrderMessagePublisher;
+import com.cengage.contenttaggingservice.unibookstore.messaging.ReserveStockCommand;
+import com.cengage.contenttaggingservice.unibookstore.messaging.ReserveStockLine;
 import com.cengage.contenttaggingservice.unibookstore.repository.BasketRepository;
-import com.cengage.contenttaggingservice.unibookstore.repository.BookStockRepository;
 import com.cengage.contenttaggingservice.unibookstore.repository.OrderingRepository;
-import com.cengage.contenttaggingservice.unibookstore.service.AdminOrderNotifier;
 import com.cengage.contenttaggingservice.unibookstore.service.OrderingService;
-import com.cengage.contenttaggingservice.unibookstore.service.ReceiptPipeline;
 import com.cengage.contenttaggingservice.unibookstore.service.ReceiptStorage;
 import com.cengage.contenttaggingservice.unibookstore.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,32 +41,26 @@ import java.util.concurrent.TimeoutException;
 public class OrderingServiceImpl implements OrderingService {
 
     private final BasketRepository basketRepository;
-    private final BookStockRepository bookStockRepository;
     private final OrderingRepository orderingRepository;
     private final OrderMapper orderMapper;
     private final SecurityUtils securityUtils;
-    private final ReceiptPipeline receiptPipeline;
-    private final AdminOrderNotifier adminOrderNotifier;
     private final ReceiptStorage receiptStorage;
+    private final OrderMessagePublisher orderMessagePublisher;
     private final long downloadTimeoutSeconds;
 
     public OrderingServiceImpl(BasketRepository basketRepository,
-                               BookStockRepository bookStockRepository,
                                OrderingRepository orderingRepository,
                                OrderMapper orderMapper,
                                SecurityUtils securityUtils,
-                               ReceiptPipeline receiptPipeline,
-                               AdminOrderNotifier adminOrderNotifier,
                                ReceiptStorage receiptStorage,
+                               OrderMessagePublisher orderMessagePublisher,
                                @Value("${app.async.download-timeout-seconds:10}") long downloadTimeoutSeconds) {
         this.basketRepository = basketRepository;
-        this.bookStockRepository = bookStockRepository;
         this.orderingRepository = orderingRepository;
         this.orderMapper = orderMapper;
         this.securityUtils = securityUtils;
-        this.receiptPipeline = receiptPipeline;
-        this.adminOrderNotifier = adminOrderNotifier;
         this.receiptStorage = receiptStorage;
+        this.orderMessagePublisher = orderMessagePublisher;
         this.downloadTimeoutSeconds = downloadTimeoutSeconds;
     }
 
@@ -92,34 +82,21 @@ public class OrderingServiceImpl implements OrderingService {
                 .status(OrderStatus.PENDING)
                 .build();
 
-        List<OrderLine> lines = new ArrayList<>();
+        List<ReserveStockLine> lines = new ArrayList<>();
         for (BookItem basketItem : basketItems) {
             Book book = basketItem.getBook();
             int count = basketItem.getQuantity();
-            BookStock stock = bookStockRepository.findByBookId(book.getId());
-            if (stock == null || stock.getQuantity() < count) {
-                throw new InsufficientStockException("Not enough stock for book " + book.getId());
-            }
-            stock.setQuantity(stock.getQuantity() - count);
-
             order.addItem(OrderItem.builder().book(book).count(count).build());
-            lines.add(new OrderLine(book.getId(), book.getTitle(), book.getAuthor(), count, stock.getPrice()));
+            lines.add(new ReserveStockLine(book.getId(), count));
         }
 
         Ordering saved = orderingRepository.save(order);
         basket.getBooks().clear();
         basketRepository.save(basket);
 
-        BigDecimal grandTotal = lines.stream()
-                .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.count())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        OrderSnapshot snapshot = new OrderSnapshot(
-                saved.getId(), customerId, saved.getCreatedAt(), List.copyOf(lines), grandTotal);
-
-        runAfterCommit(() -> {
-            adminOrderNotifier.notifyNewOrder(snapshot);
-            receiptPipeline.generateAndStore(snapshot);
-        });
+        ReserveStockCommand command = new ReserveStockCommand(
+                saved.getId(), customerId, saved.getCreatedAt(), List.copyOf(lines));
+        runAfterCommit(() -> orderMessagePublisher.requestStockReservation(command));
 
         return orderMapper.toResponse(saved);
     }

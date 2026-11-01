@@ -37,7 +37,7 @@ class LowStockServiceImplTest {
                 stock(1L, "Enabled", true, 2),
                 stock(2L, "Disabled", false, 1)));
 
-        List<LowStockItem> items = service.reportLowStock(5, true, "LOG");
+        List<LowStockItem> items = service.findLowStock(5, true);
 
         assertThat(items).extracting(LowStockItem::bookId).containsExactly(1L);
     }
@@ -48,16 +48,27 @@ class LowStockServiceImplTest {
                 stock(1L, "Enabled", true, 2),
                 stock(2L, "Disabled", false, 1)));
 
-        List<LowStockItem> items = service.reportLowStock(5, false, "LOG");
+        List<LowStockItem> items = service.findLowStock(5, false);
 
         assertThat(items).extracting(LowStockItem::bookId).containsExactly(1L, 2L);
+    }
+
+    @Test
+    void mapsBookIdTitleAndQuantity() {
+        when(bookStockRepository.findLowStock(5)).thenReturn(List.of(stock(7L, "Scarce", true, 3)));
+
+        List<LowStockItem> items = service.findLowStock(5, true);
+
+        assertThat(items).singleElement()
+                .extracting(LowStockItem::bookId, LowStockItem::title, LowStockItem::quantity)
+                .containsExactly(7L, "Scarce", 3);
     }
 
     @Test
     void passesThresholdThroughToTheRepository() {
         when(bookStockRepository.findLowStock(25)).thenReturn(List.of());
 
-        service.reportLowStock(25, true, "SSE");
+        service.findLowStock(25, true);
 
         verify(bookStockRepository).findLowStock(25);
     }

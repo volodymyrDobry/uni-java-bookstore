@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-add-order-item-unit-price
+      author: volodymyr.dobrianskyi
+      changes:
+        # Unit price captured at reservation time so receipts can be rebuilt
+        # without order-service reading the book-management stock tables.
+        - addColumn:
+            tableName: order_item
+            columns:
+              - column:
+                  name: unit_price
+                  type: DECIMAL(19, 2)
+      rollback:
+        - dropColumn:
+            tableName: order_item
+            columnName: unit_price

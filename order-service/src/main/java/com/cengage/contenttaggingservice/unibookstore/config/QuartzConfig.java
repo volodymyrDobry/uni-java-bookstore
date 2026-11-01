@@ -1,6 +1,5 @@
 package com.cengage.contenttaggingservice.unibookstore.config;
 
-import com.cengage.contenttaggingservice.unibookstore.job.LowStockDigestJob;
 import com.cengage.contenttaggingservice.unibookstore.job.ReceiptRecoveryJob;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
@@ -16,7 +15,6 @@ import java.util.TimeZone;
 public class QuartzConfig {
 
     private static final String RECEIPTS_GROUP = "receipts";
-    private static final String CATALOG_GROUP = "catalog";
     private static final TimeZone SCHEDULE_ZONE = TimeZone.getTimeZone("UTC");
 
     @Bean
@@ -37,43 +35,6 @@ public class QuartzConfig {
                 .forJob(receiptRecoveryJobDetail)
                 .withIdentity("receiptRecoveryTrigger", RECEIPTS_GROUP)
                 .withSchedule(CronScheduleBuilder.cronSchedule("0 0/10 * * * ?")
-                        .inTimeZone(SCHEDULE_ZONE)
-                        .withMisfireHandlingInstructionFireAndProceed())
-                .build();
-    }
-
-    @Bean
-    public JobDetail lowStockDigestJobDetail() {
-        return JobBuilder.newJob(LowStockDigestJob.class)
-                .withIdentity("lowStockDigestJob", CATALOG_GROUP)
-                .usingJobData("threshold", 10)
-                .usingJobData("onlyEnabled", true)
-                .usingJobData("channel", "LOG")
-                .storeDurably()
-                .requestRecovery(true)
-                .build();
-    }
-
-    @Bean
-    public Trigger lowStockDailyTrigger(JobDetail lowStockDigestJobDetail) {
-        return TriggerBuilder.newTrigger()
-                .forJob(lowStockDigestJobDetail)
-                .withIdentity("lowStockDailyTrigger", CATALOG_GROUP)
-                .usingJobData("threshold", 5)
-                .withSchedule(CronScheduleBuilder.cronSchedule("0 0 9 * * ?")
-                        .inTimeZone(SCHEDULE_ZONE)
-                        .withMisfireHandlingInstructionFireAndProceed())
-                .build();
-    }
-
-    @Bean
-    public Trigger lowStockWeeklyTrigger(JobDetail lowStockDigestJobDetail) {
-        return TriggerBuilder.newTrigger()
-                .forJob(lowStockDigestJobDetail)
-                .withIdentity("lowStockWeeklyTrigger", CATALOG_GROUP)
-                .usingJobData("threshold", 25)
-                .usingJobData("channel", "SSE")
-                .withSchedule(CronScheduleBuilder.cronSchedule("0 0 8 ? * MON")
                         .inTimeZone(SCHEDULE_ZONE)
                         .withMisfireHandlingInstructionFireAndProceed())
                 .build();

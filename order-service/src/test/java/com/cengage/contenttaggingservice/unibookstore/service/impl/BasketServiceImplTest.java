@@ -7,9 +7,9 @@ import com.cengage.contenttaggingservice.unibookstore.dto.BasketResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBasketItemRequest;
 import com.cengage.contenttaggingservice.unibookstore.mapper.BasketMapper;
 import com.cengage.contenttaggingservice.unibookstore.repository.BasketRepository;
-import com.cengage.contenttaggingservice.unibookstore.repository.BookRepository;
 import com.cengage.contenttaggingservice.unibookstore.security.CurrentUser;
 import com.cengage.contenttaggingservice.unibookstore.utils.SecurityUtils;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -47,7 +47,7 @@ class BasketServiceImplTest {
     private BasketMapper basketMapper;
 
     @Mock
-    private BookRepository bookRepository;
+    private EntityManager entityManager;
 
     @InjectMocks
     private BasketServiceImpl basketService;
@@ -113,7 +113,7 @@ class BasketServiceImplTest {
         givenCurrentUser();
         when(basketRepository.findByUserId(USERNAME))
                 .thenReturn(Optional.of(basket));
-        when(bookRepository.getReferenceById(BOOK_ID))
+        when(entityManager.getReference(Book.class, BOOK_ID))
                 .thenReturn(book);
         when(basketRepository.save(any(Basket.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -145,7 +145,7 @@ class BasketServiceImplTest {
         givenCurrentUser();
         when(basketRepository.findByUserId(USERNAME))
                 .thenReturn(Optional.of(basket));
-        when(bookRepository.getReferenceById(BOOK_ID))
+        when(entityManager.getReference(Book.class, BOOK_ID))
                 .thenReturn(book);
         when(basketRepository.save(any(Basket.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));

@@ -7,10 +7,10 @@ import com.cengage.contenttaggingservice.unibookstore.dto.BasketResponse;
 import com.cengage.contenttaggingservice.unibookstore.dto.UpdateBasketItemRequest;
 import com.cengage.contenttaggingservice.unibookstore.mapper.BasketMapper;
 import com.cengage.contenttaggingservice.unibookstore.repository.BasketRepository;
-import com.cengage.contenttaggingservice.unibookstore.repository.BookRepository;
 import com.cengage.contenttaggingservice.unibookstore.security.CurrentUser;
 import com.cengage.contenttaggingservice.unibookstore.service.BasketService;
 import com.cengage.contenttaggingservice.unibookstore.utils.SecurityUtils;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,10 @@ public class BasketServiceImpl implements BasketService {
     private final BasketRepository basketRepository;
     private final SecurityUtils securityUtils;
     private final BasketMapper basketMapper;
-    private final BookRepository bookRepository;
+    // Stock/catalogue data is owned by book-management-service, so order-service
+    // never reads the book repositories. A managed reference (proxy by id) is
+    // enough to satisfy the basket item's foreign key to an existing book.
+    private final EntityManager entityManager;
 
     @Override
     public BasketResponse getUsersBasket(String username) {
@@ -39,7 +42,7 @@ public class BasketServiceImpl implements BasketService {
     @Transactional
     public BasketResponse addBookToTheBasket(UpdateBasketItemRequest request) {
         Basket userBasket = this.getOrCreateNewBasket();
-        Book book = bookRepository.getReferenceById(request.bookId());
+        Book book = entityManager.getReference(Book.class, request.bookId());
         BookItem updatedBookItem = userBasket.getBooks().stream()
                 .filter(b -> Objects.equals(b.getBook().getId(), request.bookId()))
                 .findFirst()

@@ -4,7 +4,10 @@ import com.cengage.contenttaggingservice.unibookstore.dto.LowStockItem;
 
 import java.util.List;
 
+/**
+ * Computes low-stock reports from the stock data owned by this service.
+ */
 public interface LowStockService {
 
-    List<LowStockItem> reportLowStock(int threshold, boolean onlyEnabled, String channel);
+    List<LowStockItem> findLowStock(int threshold, boolean onlyEnabled);
 }

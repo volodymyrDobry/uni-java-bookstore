@@ -9,3 +9,7 @@ databaseChangeLog:
       file: db/changelog/004-create-quartz-tables.yaml
   - include:
       file: db/changelog/005-add-ordering-receipt-attempts.yaml
+  - include:
+      file: db/changelog/006-add-order-item-unit-price.yaml
+  - include:
+      file: db/changelog/007-create-low-stock-digest.yaml

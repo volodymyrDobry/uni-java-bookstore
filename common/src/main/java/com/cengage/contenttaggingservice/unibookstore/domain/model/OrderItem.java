@@ -16,6 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @Setter
@@ -39,4 +41,10 @@ public class OrderItem {
 
     @Column(name = "count", nullable = false)
     private Integer count;
+
+    // Price captured when book-management-service confirms the stock reservation.
+    // Null while the order is still PENDING (awaiting the reservation reply); it
+    // lets receipts be rebuilt locally without order-service reading stock data.
+    @Column(name = "unit_price")
+    private BigDecimal unitPrice;
 }

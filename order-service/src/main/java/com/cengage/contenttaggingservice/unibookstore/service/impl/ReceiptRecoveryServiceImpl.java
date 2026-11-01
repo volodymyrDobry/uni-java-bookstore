@@ -2,12 +2,10 @@ package com.cengage.contenttaggingservice.unibookstore.service.impl;
 
 import com.cengage.contenttaggingservice.unibookstore.domain.enums.OrderStatus;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Book;
-import com.cengage.contenttaggingservice.unibookstore.domain.model.BookStock;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.OrderItem;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Ordering;
 import com.cengage.contenttaggingservice.unibookstore.dto.OrderLine;
 import com.cengage.contenttaggingservice.unibookstore.dto.OrderSnapshot;
-import com.cengage.contenttaggingservice.unibookstore.repository.BookStockRepository;
 import com.cengage.contenttaggingservice.unibookstore.repository.OrderingRepository;
 import com.cengage.contenttaggingservice.unibookstore.service.ReceiptPipeline;
 import com.cengage.contenttaggingservice.unibookstore.service.ReceiptRecoveryService;
@@ -22,15 +20,20 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReceiptRecoveryServiceImpl implements ReceiptRecoveryService {
 
+    // Orders in a terminal state never need a receipt rebuild.
+    private static final Set<OrderStatus> TERMINAL_STATUSES =
+            EnumSet.of(OrderStatus.PDF_READY, OrderStatus.REJECTED);
+
     private final OrderingRepository orderingRepository;
-    private final BookStockRepository bookStockRepository;
     private final ReceiptPipeline receiptPipeline;
     private final ObjectProvider<ReceiptRecoveryService> selfProvider;
 
@@ -53,14 +56,20 @@ public class ReceiptRecoveryServiceImpl implements ReceiptRecoveryService {
     public List<Long> findRecoverableOrderIds(int maxAgeMinutes, int batchSize, int maxAttempts) {
         Instant cutoff = Instant.now().minus(maxAgeMinutes, ChronoUnit.MINUTES);
         return orderingRepository.findRecoverableIds(
-                OrderStatus.PDF_READY, cutoff, maxAttempts, PageRequest.of(0, batchSize));
+                TERMINAL_STATUSES, cutoff, maxAttempts, PageRequest.of(0, batchSize));
     }
 
     @Override
     @Transactional
     public void recoverOne(long orderId, int maxAttempts) {
         Ordering order = orderingRepository.findById(orderId).orElse(null);
-        if (order == null || order.getStatus() == OrderStatus.PDF_READY) {
+        if (order == null || TERMINAL_STATUSES.contains(order.getStatus())) {
+            return;
+        }
+        if (!isReserved(order)) {
+            // Still awaiting the stock-reservation reply (no prices yet); the JMS
+            // flow, not receipt recovery, is responsible for moving it forward.
+            log.debug("Order {} has no reserved prices yet; skipping receipt recovery", orderId);
             return;
         }
 
@@ -84,12 +93,16 @@ public class ReceiptRecoveryServiceImpl implements ReceiptRecoveryService {
         }
     }
 
+    private boolean isReserved(Ordering order) {
+        return !order.getItems().isEmpty()
+                && order.getItems().stream().allMatch(item -> item.getUnitPrice() != null);
+    }
+
     private OrderSnapshot buildSnapshot(Ordering order) {
         List<OrderLine> lines = new ArrayList<>();
         for (OrderItem item : order.getItems()) {
             Book book = item.getBook();
-            BookStock stock = bookStockRepository.findByBookId(book.getId());
-            BigDecimal unitPrice = stock != null ? stock.getPrice() : BigDecimal.ZERO;
+            BigDecimal unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
             lines.add(new OrderLine(book.getId(), book.getTitle(), book.getAuthor(), item.getCount(), unitPrice));
         }
         BigDecimal grandTotal = lines.stream()

@@ -61,6 +61,18 @@ services:
     ports:
       - "4566:4566"
 
+  activemq:
+    image: apache/activemq-classic:6.2.0
+    ports:
+      - "61616:61616"   # OpenWire (JMS)
+      - "8161:8161"     # web console (admin/admin)
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/61616" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   book-management-service:
     build:
       context: .
@@ -69,6 +81,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       KEYCLOAK_URI: http://keycloak:8080
+      ACTIVEMQ_URL: tcp://activemq:61616
       SERVER_PORT: 8081
     ports:
       - "8081:8081"
@@ -76,6 +89,8 @@ services:
       postgres:
         condition: service_healthy
       keycloak:
+        condition: service_started
+      activemq:
         condition: service_started
 
   order-service:
@@ -87,6 +102,7 @@ services:
       DB_PORT: 5432
       KEYCLOAK_URI: http://keycloak:8080
       S3_ENDPOINT: http://localstack:4566
+      ACTIVEMQ_URL: tcp://activemq:61616
       SERVER_PORT: 8083
     ports:
       - "8083:8083"
@@ -96,6 +112,8 @@ services:
       keycloak:
         condition: service_started
       localstack:
+        condition: service_started
+      activemq:
         condition: service_started
 
   frontend:

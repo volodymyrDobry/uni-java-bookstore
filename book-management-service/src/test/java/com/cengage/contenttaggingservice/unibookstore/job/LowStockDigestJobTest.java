@@ -1,11 +1,15 @@
 package com.cengage.contenttaggingservice.unibookstore.job;
 
-import com.cengage.contenttaggingservice.unibookstore.service.LowStockService;
+import com.cengage.contenttaggingservice.unibookstore.dto.LowStockDigestResponse;
+import com.cengage.contenttaggingservice.unibookstore.service.LowStockDigestService;
 import org.junit.jupiter.api.Test;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -28,24 +32,28 @@ class LowStockDigestJobTest {
         return context;
     }
 
+    private LowStockDigestResponse digest() {
+        return new LowStockDigestResponse(1L, Instant.now(), 5, true, "SSE", 0, List.of());
+    }
+
     @Test
-    void readsMergedParamsAndCallsTheService() {
+    void readsMergedParamsAndRecordsADigest() {
         LowStockDigestJob job = new LowStockDigestJob();
-        LowStockService service = mock(LowStockService.class);
-        ReflectionTestUtils.setField(job, "lowStockService", service);
+        LowStockDigestService service = mock(LowStockDigestService.class);
+        when(service.recordDigest(5, true, "SSE")).thenReturn(digest());
+        ReflectionTestUtils.setField(job, "lowStockDigestService", service);
 
         job.executeInternal(contextWith(5, true, "SSE"));
 
-        verify(service).reportLowStock(5, true, "SSE");
+        verify(service).recordDigest(5, true, "SSE");
     }
 
     @Test
     void recordsErrorAndWaitsForNextRunInsteadOfPropagating() {
         LowStockDigestJob job = new LowStockDigestJob();
-        LowStockService service = mock(LowStockService.class);
-        when(service.reportLowStock(anyInt(), anyBoolean(), anyString()))
-                .thenThrow(new RuntimeException("db down"));
-        ReflectionTestUtils.setField(job, "lowStockService", service);
+        LowStockDigestService service = mock(LowStockDigestService.class);
+        when(service.recordDigest(anyInt(), anyBoolean(), anyString())).thenThrow(new RuntimeException("db down"));
+        ReflectionTestUtils.setField(job, "lowStockDigestService", service);
 
         assertThatCode(() -> job.executeInternal(contextWith(5, true, "LOG"))).doesNotThrowAnyException();
     }

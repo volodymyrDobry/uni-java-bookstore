@@ -19,14 +19,14 @@ public class LowStockServiceImpl implements LowStockService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<LowStockItem> reportLowStock(int threshold, boolean onlyEnabled, String channel) {
+    public List<LowStockItem> findLowStock(int threshold, boolean onlyEnabled) {
         List<LowStockItem> items = bookStockRepository.findLowStock(threshold).stream()
                 .filter(stock -> !onlyEnabled || stock.getBook().isEnabled())
                 .map(stock -> new LowStockItem(stock.getBook().getId(), stock.getBook().getTitle(), stock.getQuantity()))
                 .toList();
 
-        log.info("Low-stock digest [channel={}, threshold={}, onlyEnabled={}]: {} book(s) at or below threshold {}",
-                channel, threshold, onlyEnabled, items.size(), items);
+        log.info("Low-stock query [threshold={}, onlyEnabled={}]: {} book(s) at or below threshold",
+                threshold, onlyEnabled, items.size());
         return items;
     }
 }

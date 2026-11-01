@@ -4,21 +4,18 @@ import com.cengage.contenttaggingservice.unibookstore.domain.enums.OrderStatus;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Basket;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Book;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.BookItem;
-import com.cengage.contenttaggingservice.unibookstore.domain.model.BookStock;
 import com.cengage.contenttaggingservice.unibookstore.domain.model.Ordering;
 import com.cengage.contenttaggingservice.unibookstore.dto.OrderResponse;
-import com.cengage.contenttaggingservice.unibookstore.dto.OrderSnapshot;
 import com.cengage.contenttaggingservice.unibookstore.dto.ReceiptDownload;
 import com.cengage.contenttaggingservice.unibookstore.exception.InsufficientStockException;
 import com.cengage.contenttaggingservice.unibookstore.exception.NotFoundException;
 import com.cengage.contenttaggingservice.unibookstore.exception.UserNotAllowedException;
 import com.cengage.contenttaggingservice.unibookstore.mapper.OrderMapper;
+import com.cengage.contenttaggingservice.unibookstore.messaging.OrderMessagePublisher;
+import com.cengage.contenttaggingservice.unibookstore.messaging.ReserveStockCommand;
 import com.cengage.contenttaggingservice.unibookstore.repository.BasketRepository;
-import com.cengage.contenttaggingservice.unibookstore.repository.BookStockRepository;
 import com.cengage.contenttaggingservice.unibookstore.repository.OrderingRepository;
 import com.cengage.contenttaggingservice.unibookstore.security.CurrentUser;
-import com.cengage.contenttaggingservice.unibookstore.service.AdminOrderNotifier;
-import com.cengage.contenttaggingservice.unibookstore.service.ReceiptPipeline;
 import com.cengage.contenttaggingservice.unibookstore.service.ReceiptStorage;
 import com.cengage.contenttaggingservice.unibookstore.utils.SecurityUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +25,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -50,9 +46,6 @@ class OrderingServiceImplTest {
     private BasketRepository basketRepository;
 
     @Mock
-    private BookStockRepository bookStockRepository;
-
-    @Mock
     private OrderingRepository orderingRepository;
 
     @Mock
@@ -62,21 +55,18 @@ class OrderingServiceImplTest {
     private SecurityUtils securityUtils;
 
     @Mock
-    private ReceiptPipeline receiptPipeline;
-
-    @Mock
-    private AdminOrderNotifier adminOrderNotifier;
-
-    @Mock
     private ReceiptStorage receiptStorage;
+
+    @Mock
+    private OrderMessagePublisher orderMessagePublisher;
 
     private OrderingServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new OrderingServiceImpl(
-                basketRepository, bookStockRepository, orderingRepository, orderMapper,
-                securityUtils, receiptPipeline, adminOrderNotifier, receiptStorage, 10L);
+                basketRepository, orderingRepository, orderMapper,
+                securityUtils, receiptStorage, orderMessagePublisher, 10L);
     }
 
     private void loginAs(String username) {
@@ -93,12 +83,10 @@ class OrderingServiceImplTest {
     }
 
     @Test
-    void placeOrderPersistsOrderDecrementsStockClearsBasketAndTriggersAsync() {
+    void placeOrderPersistsPendingOrderClearsBasketAndPublishesReserveCommand() {
         loginAs("alice");
         Basket basket = basketWith(bookItem(1L, 2));
         when(basketRepository.findByUserId("alice")).thenReturn(Optional.of(basket));
-        BookStock stock = BookStock.builder().id(1L).quantity(5).price(new BigDecimal("9.99")).build();
-        when(bookStockRepository.findByBookId(1L)).thenReturn(stock);
         when(orderingRepository.save(any(Ordering.class))).thenAnswer(invocation -> {
             Ordering order = invocation.getArgument(0);
             order.setId(100L);
@@ -110,7 +98,6 @@ class OrderingServiceImplTest {
         OrderResponse response = service.placeOrder();
 
         assertThat(response.status()).isEqualTo(OrderStatus.PENDING);
-        assertThat(stock.getQuantity()).as("stock decremented 5 - 2").isEqualTo(3);
         assertThat(basket.getBooks()).as("basket cleared").isEmpty();
 
         ArgumentCaptor<Ordering> orderCaptor = ArgumentCaptor.forClass(Ordering.class);
@@ -119,25 +106,38 @@ class OrderingServiceImplTest {
         assertThat(saved.getStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(saved.getItems()).hasSize(1);
         assertThat(saved.getItems().get(0).getCount()).isEqualTo(2);
+        assertThat(saved.getItems().get(0).getUnitPrice())
+                .as("price is unknown until book-management reserves stock")
+                .isNull();
 
-        ArgumentCaptor<OrderSnapshot> snapshotCaptor = ArgumentCaptor.forClass(OrderSnapshot.class);
-        verify(receiptPipeline).generateAndStore(snapshotCaptor.capture());
-        assertThat(snapshotCaptor.getValue().grandTotal()).isEqualByComparingTo("19.98");
-        verify(adminOrderNotifier).notifyNewOrder(any(OrderSnapshot.class));
+        ArgumentCaptor<ReserveStockCommand> commandCaptor = ArgumentCaptor.forClass(ReserveStockCommand.class);
+        verify(orderMessagePublisher).requestStockReservation(commandCaptor.capture());
+        ReserveStockCommand command = commandCaptor.getValue();
+        assertThat(command.orderId()).isEqualTo(100L);
+        assertThat(command.customerId()).isEqualTo("alice");
+        assertThat(command.lines()).singleElement()
+                .satisfies(line -> {
+                    assertThat(line.bookId()).isEqualTo(1L);
+                    assertThat(line.quantity()).isEqualTo(2);
+                });
     }
 
     @Test
-    void placeOrderRejectsWhenStockInsufficientAndPersistsNothing() {
+    void placeOrderDoesNotTouchStockOrReceiptAtPlacementTime() {
         loginAs("alice");
-        when(basketRepository.findByUserId("alice")).thenReturn(Optional.of(basketWith(bookItem(1L, 5))));
-        when(bookStockRepository.findByBookId(1L))
-                .thenReturn(BookStock.builder().id(1L).quantity(1).price(new BigDecimal("9.99")).build());
+        when(basketRepository.findByUserId("alice")).thenReturn(Optional.of(basketWith(bookItem(1L, 2))));
+        when(orderingRepository.save(any(Ordering.class))).thenAnswer(invocation -> {
+            Ordering order = invocation.getArgument(0);
+            order.setId(100L);
+            return order;
+        });
+        when(orderMapper.toResponse(any(Ordering.class)))
+                .thenReturn(new OrderResponse(100L, "alice", Instant.now(), OrderStatus.PENDING, null, List.of()));
 
-        assertThatThrownBy(service::placeOrder).isInstanceOf(InsufficientStockException.class);
+        service.placeOrder();
 
-        verify(orderingRepository, never()).save(any());
-        verify(receiptPipeline, never()).generateAndStore(any());
-        verify(adminOrderNotifier, never()).notifyNewOrder(any());
+        // Stock removal and receipt generation happen only after the reservation reply.
+        verify(receiptStorage, never()).upload(any(), any(), any());
     }
 
     @Test
@@ -147,6 +147,16 @@ class OrderingServiceImplTest {
 
         assertThatThrownBy(service::placeOrder).isInstanceOf(InsufficientStockException.class);
         verify(orderingRepository, never()).save(any());
+        verify(orderMessagePublisher, never()).requestStockReservation(any());
+    }
+
+    @Test
+    void placeOrderRejectsMissingBasket() {
+        loginAs("alice");
+        when(basketRepository.findByUserId("alice")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(service::placeOrder).isInstanceOf(InsufficientStockException.class);
+        verify(orderMessagePublisher, never()).requestStockReservation(any());
     }
 
     @Test
