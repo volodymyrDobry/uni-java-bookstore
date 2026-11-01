@@ -1,0 +1,57 @@
+### @Auditable  ->  AuditAspect (@AfterReturning = SUCCESS, @AfterThrowing = FAILURE).
+### The audit effect is a LOG LINE, not an HTTP body, so these requests just trigger the
+### audited endpoints and you confirm the log. Watch the application console for:
+###
+###   AUDIT action=BOOK_CREATED status=SUCCESS user=admin method=CRUDBookServiceImpl.createBook(..)
+###   AUDIT action=BOOK_UPDATED status=SUCCESS user=admin method=CRUDBookServiceImpl.updateBookDetails(..)
+###
+### The FAILURE (@AfterThrowing) branch is hard to hit over HTTP because @BookExists rejects
+### bad ids before the service runs; it is covered by AuditAspectTest instead.
+### Audited methods require ADMIN, so we log in as admin.
+
+### login admin
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=admin&password=admin
+
+> {% client.global.set("admin_token", response.body.access_token); %}
+
+### 1) createBook -> @Auditable("BOOK_CREATED"), expect 201 + a SUCCESS audit log line
+POST http://localhost:8081/api/v1/books
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "title": "Audited Book",
+  "description": "Creating this should emit an audit log line",
+  "author": "Author",
+  "genre": "SCIENCE_FICTION",
+  "imageUrl": "https://example.com/audited.jpg",
+  "enabled": true,
+  "price": 21.00,
+  "quantity": 8
+}
+
+> {%
+    client.test("createBook returns 201 (audit SUCCESS expected in logs)", function () {
+        client.assert(response.status === 201, "Expected 201 but got " + response.status);
+    });
+    client.global.set("audited_book_id", response.body.id);
+%}
+
+### 2) updateBookDetails -> @Auditable("BOOK_UPDATED"), expect 200 + a SUCCESS audit log line
+### (this method also carries @TimeTracker -> see time-tracker.http)
+PATCH http://localhost:8081/api/v1/books/{{audited_book_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "description": "Updated description - should emit BOOK_UPDATED audit log line"
+}
+
+> {%
+    client.test("updateBookDetails returns 200 (audit SUCCESS expected in logs)", function () {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+    });
+%}

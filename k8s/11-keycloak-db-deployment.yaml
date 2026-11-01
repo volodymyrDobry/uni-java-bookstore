@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak-db
+  namespace: uni-book-store
+  labels:
+    app: keycloak-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: keycloak-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: keycloak
+            - name: POSTGRES_USER
+              value: keycloak
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: keycloak-db-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U keycloak -d keycloak"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: keycloak-db-data
+          persistentVolumeClaim:
+            claimName: keycloak-db-pvc

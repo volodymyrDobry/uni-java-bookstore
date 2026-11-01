@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  namespace: uni-book-store
+  labels:
+    app: frontend
+spec:
+  ingressClassName: nginx
+  rules:
+    # Main entry point. The SPA is served here; its nginx proxies /api to the
+    # backend same-origin, so the browser never makes cross-origin API calls.
+    - host: uni-book-store.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

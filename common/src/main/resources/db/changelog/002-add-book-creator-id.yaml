@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-books-creator-id
+      author: volodymyr.dobrianskyi
+      changes:
+        - addColumn:
+            tableName: books
+            columns:
+              - column:
+                  name: creator_id
+                  type: VARCHAR(255)
+                  defaultValue: admin
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: books
+            columnName: creator_id

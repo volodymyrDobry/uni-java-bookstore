@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: uni-book-store
+  labels:
+    app: backend
+data:
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  # Variant Б (browser login): issuer must match the hostname the BROWSER uses,
+  # so the backend validates tokens against the same ingress URL (keycloak.local).
+  KEYCLOAK_URI: "http://keycloak.local"
+  POSTGRES_DB: "mydatabase"
+  POSTGRES_USER: "myuser"
+  # ActiveMQ broker shared by book-management-service and order-service for the
+  # order-placement saga (mirrors compose's ACTIVEMQ_URL).
+  ACTIVEMQ_URL: "tcp://activemq:61616"
+  # LocalStack S3 (used by order-service for receipt storage).
+  S3_ENDPOINT: "http://localstack:4566"
+  S3_REGION: "us-east-1"
+  S3_BUCKET: "ubs-receipts"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+  MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+  MANAGEMENT_INFO_ENV_ENABLED: "true"

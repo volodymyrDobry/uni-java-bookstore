@@ -1,0 +1,99 @@
+### @BookOwner  ->  BookStockServiceImpl#updateBookStock, guarded by BookOwnerAspect.
+### This is the only new annotation with an observable HTTP effect: the owner gets 200,
+### a non-owner gets 403 (UserNotAllowedException -> @ResponseStatus FORBIDDEN).
+###
+### Seeded books have creator_id = 'admin' (DB default), so:
+###   - admin  owns seeded book 1            -> 200
+###   - vova   is ADMIN but NOT the owner     -> 403  (this isolates @BookOwner from the
+###            @PreAuthorize("hasRole('ADMIN')") check, which vova passes)
+###   - vova   owns a book he created himself -> 200
+###
+### Self-contained: it fetches the tokens it needs first.
+
+### login admin
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=admin&password=admin
+
+> {% client.global.set("admin_token", response.body.access_token); %}
+
+### login vova
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=vova&password=vova
+
+> {% client.global.set("vova_token", response.body.access_token); %}
+
+### 1) OWNER (admin) updates stock of seeded book 1 -> expect 200
+PUT http://localhost:8081/api/v1/books/1/stock
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "quantity": 25,
+  "price": 19.99
+}
+
+> {%
+    client.test("owner is allowed", function () {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+    });
+%}
+
+### 2) NON-OWNER (vova, also ADMIN) updates stock of seeded book 1 -> expect 403
+PUT http://localhost:8081/api/v1/books/1/stock
+Authorization: Bearer {{vova_token}}
+Content-Type: application/json
+
+{
+  "quantity": 10,
+  "price": 9.99
+}
+
+> {%
+    client.test("non-owner is forbidden by @BookOwner", function () {
+        client.assert(response.status === 403, "Expected 403 but got " + response.status);
+    });
+%}
+
+### 3) vova creates his own book (he becomes the creator/owner) -> expect 201
+POST http://localhost:8081/api/v1/books
+Authorization: Bearer {{vova_token}}
+Content-Type: application/json
+
+{
+  "title": "Vova's Book",
+  "description": "A book owned by vova",
+  "author": "Vova",
+  "genre": "FANTASY",
+  "imageUrl": "https://example.com/cover.jpg",
+  "enabled": true,
+  "price": 12.50,
+  "quantity": 5
+}
+
+> {%
+    client.test("vova created a book", function () {
+        client.assert(response.status === 201, "Expected 201 but got " + response.status);
+        client.assert(response.body.id, "No book id in response");
+    });
+    client.global.set("vova_book_id", response.body.id);
+%}
+
+### 4) OWNER (vova) updates stock of the book he just created -> expect 200
+PUT http://localhost:8081/api/v1/books/{{vova_book_id}}/stock
+Authorization: Bearer {{vova_token}}
+Content-Type: application/json
+
+{
+  "quantity": 7,
+  "price": 15.00
+}
+
+> {%
+    client.test("creator may update own book stock", function () {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+    });
+%}

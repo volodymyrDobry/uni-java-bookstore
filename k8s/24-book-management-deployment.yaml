@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-management-service
+  namespace: uni-book-store
+  labels:
+    app: book-management-service
+    app.kubernetes.io/part-of: uni-book-store
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: book-management-service
+  template:
+    metadata:
+      labels:
+        app: book-management-service
+        app.kubernetes.io/part-of: uni-book-store
+    spec:
+      # Resolve keycloak.local inside the pod to the minikube node, where the
+      # nginx ingress listens on :80, so the service validates JWTs against the
+      # SAME issuer URL the browser uses. Update the IP if `minikube ip` differs.
+      hostAliases:
+        - ip: "192.168.49.2"
+          hostnames:
+            - keycloak.local
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: [ "sh", "-c", "until nc -z postgres 5432; do sleep 2; done" ]
+        - name: wait-for-activemq
+          image: busybox:1.36
+          command: [ "sh", "-c", "until nc -z activemq 61616; do sleep 2; done" ]
+      containers:
+        - name: book-management-service
+          image: book-management-service:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          # The app needs ~45s to boot; the startup probe holds liveness/readiness
+          # off until it is up (40 x 5s = up to 200s), preventing a boot crash loop.
+          startupProbe:
+            httpGet:
+              port: 8081
+              path: /actuator/health
+            periodSeconds: 5
+            failureThreshold: 40
+          livenessProbe:
+            httpGet:
+              port: 8081
+              path: /actuator/health/liveness
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: /actuator/health/readiness
+            periodSeconds: 10
+            failureThreshold: 3

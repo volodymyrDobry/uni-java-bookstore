@@ -1,0 +1,45 @@
+### Keycloak login (Resource Owner Password / "explicit" direct-access-grant flow).
+### Running this file first stores a token per user, so the other .http files can reuse
+### {{admin_token}}, {{user_token}} and {{vova_token}} (these are captured at runtime).
+
+### admin / admin  (role ADMIN)
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=admin&password=admin
+
+> {%
+    client.test("admin token issued", function () {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+        client.assert(response.body.access_token, "No access_token in response");
+    });
+    client.global.set("admin_token", response.body.access_token);
+%}
+
+### user / user  (role USER)
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=user&password=user
+
+> {%
+    client.test("user token issued", function () {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+        client.assert(response.body.access_token, "No access_token in response");
+    });
+    client.global.set("user_token", response.body.access_token);
+%}
+
+### vova / vova  (role ADMIN)
+POST http://localhost:8080/realms/uni-book-store/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=uni-book-store-client&username=vova&password=vova
+
+> {%
+    client.test("vova token issued", function () {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+        client.assert(response.body.access_token, "No access_token in response");
+    });
+    client.global.set("vova_token", response.body.access_token);
+%}
