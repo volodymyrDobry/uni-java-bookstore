@@ -42,10 +42,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   info:
     env:
       enabled: true
+  metrics:
+    distribution:
+      # Lab 7: emit http_server_requests_seconds_bucket for p95 latency.
+      percentiles-histogram:
+        http.server.requests: true
 
 info:
   app:
@@ -53,6 +58,12 @@ info:
     # Surfaced at /actuator/info so each deployed image tag is identifiable
     # (used by the GitOps update demo in Lab 5). Set via the APP_VERSION env.
     version: ${APP_VERSION:dev}
+
+logging:
+  # Lab 7: one JSON object per line on stdout (the ObservabilityFilter builds it),
+  # so Loki can parse request logs with `| json`.
+  pattern:
+    console: "%msg%n"
 
 server:
   port: ${SERVER_PORT:8081}
